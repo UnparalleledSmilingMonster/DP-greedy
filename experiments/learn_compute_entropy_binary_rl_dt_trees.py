@@ -15,7 +15,7 @@ if ccanada_expes:
 
 
 parser = argparse.ArgumentParser(description='Probabilistic dataset reconstruction from interpretable model experiments')
-parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2], help='method-dataset combination (for now, only COMPAS supported)')
+parser.add_argument('--expe_id', type=int, default=0, choices= [0,1], help='method-dataset combination (for now, only COMPAS supported)')
 args = parser.parse_args()
 
 if ccanada_expes:
@@ -30,31 +30,40 @@ else:
 # Script parameters
 test_size_ratio = 0.2 # only to check generalization
 plot_extension = "pdf"
-max_time = 180 # seconds
+max_time = 3600 # seconds
 
 # Slurm task parallelism
 expe_id=args.expe_id
 datasets = ["compas"]
-methods = ["CORELS", "DL8.5", "sklearn_DT"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
+methods = ["DL8.5", "sklearn_DT"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
 slurm_expes = []
 for d in datasets:
     for m in methods:
         slurm_expes.append([d, m])
 
 dataset = slurm_expes[expe_id][0]
-method_id = slurm_expes[expe_id][1]
+method = slurm_expes[expe_id][1]
 
+if verbosity >= 0:
+    print("Slurm #expes = ", len(slurm_expes))
 # MPI parallelism
-random_seeds = [i for i in range(10)] # for 1) data train/test split and 2) methods initialization
+random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
 min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
+max_depth_params = [i for i in range(1,11)]
 
-trees_min_sample_leaves = int(min_support_param * n_samples)
-maximum_depth = 2
 
 configs_list = []
-for rs in random_seeds:
-    configs_list.append([rs])
+for rs in random_seeds: # 5 values
+    for msp in min_support_params: # 5 values
+        for mdp in max_depth_params: # 10 values
+            configs_list.append([rs, msp, mdp])
+
 random_state_value = configs_list[rank][0]
+min_support = configs_list[rank][1]
+max_depth = configs_list[rank][2]
+
+if verbosity >= 0:
+    print("MPI #params = ", len(configs_list))
 
 # Load the data
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
@@ -68,6 +77,7 @@ if verbosity >= 0:
 
 X = "shouldnotbeusedanymore"
 y = "shouldnotbeusedanymore"
+trees_min_sample_leaves = int(min_support * n_samples)
 
 # NO-KNOWLEDGE DATASET computations
 single_example_possibilities = 2**(total_features) #num_possibilities([]) #2**X.shape[1] # Binary features
@@ -78,109 +88,12 @@ if verbosity >= 0:
     print("Original dataset entropy (with no knowledge) = ", n_samples, "*", single_example_entropy, " = ", no_knowledge_dataset_entropy)
     print("-----------------------------------------------------------------")
 
-
-
 n_elementary_tokens = 0
 n_branches_rules = 0
+average_tokens_per_examples = 0
+n_elementary_tokens_path = 0
 
-if method == "CORELS":
-    # CORELS parameters
-   
-    max_memory = 8000 # megabytes
-    n_iter_param = 10 ** 9
-    maximum_width = 2
-    policy_param = 'lower_bound'
-    # greater than zero to help pruning
-    # but smaller than 1/n_samples because we don't want to trade-off accuracy
-    cValue =  0.99*(1/n_samples) #n_examples_to_improve_f_obj/X.shape[0]
-
-    corels_verbosity = []
-    if verbosity >= 3:
-        corels_verbosity.extend(['progress', 'mine'])
-        
-    def num_possibilities(antecedents_indexes):
-        # a rule index is negative if it is a negation
-        # else positive
-        unique_antecedents_indexes = np.unique(antecedents_indexes)
-        if 0 in unique_antecedents_indexes:
-            raise ValueError("Should never happen (0 in unique_antecedents_indexes), exiting.")
-        for k in unique_antecedents_indexes:
-            if -k in unique_antecedents_indexes:
-                return 0 # no possible world
-        return 2**(total_features - unique_antecedents_indexes.size)
-
-    def capt_i_j(i, j_list, all_rules):
-        '''
-        Number of worlds compatible with rules in j_list (conjunction) but actually captured by rule i in rule list all_rules
-        '''
-        rule_i_antecedents = all_rules[i]['antecedents']
-        rules_in_j_antecedents = np.concatenate([all_rules[k]['antecedents'] for k in j_list])
-        num_i_and_j = num_possibilities(np.concatenate([rule_i_antecedents, rules_in_j_antecedents]))
-        if verbosity >= 10:
-            print("num_%d_and_" %(i), j_list, ' = ', num_i_and_j)
-        res = num_i_and_j - sum([capt_i_j(k, np.unique(np.concatenate([j_list, [i]])), all_rules) for k in range(0, i)])
-        if verbosity >= 10:
-            print("capt_%d_"%i, j_list, res)
-        return res 
-
-    def capt_rl(j, all_rules):
-        '''
-        Number of possible worlds for examples captured by rule j in rule list all_rules.
-        '''
-        res = capt_i_j(j, [j], all_rules)
-        if verbosity >= 5:
-            print("capt_rl(%d) = " %j, res, "\n")
-        return res
-
-
-    clf = CorelsClassifier(c=cValue, verbosity=corels_verbosity, policy=policy_param, n_iter=n_iter_param, max_card=maximum_width, max_length=maximum_depth, min_support=min_support_param) #, min_support=0.20)
-    start = time.perf_counter()
-    clf.fit(X_train, y_train, features=features, time_limit=max_time, memory_limit=max_memory)
-    duration = time.perf_counter() - start
-    acc = clf.score(X_train, y_train)
-
-    if verbosity >= 0:
-        print("Model built. Duration of building =", round(duration, 4))
-        print("Status = ", clf.get_status())
-        print((clf.rl_))
-        print("Accuracy = ", acc)
-    if verbosity >= 2:
-        print("Unique labels = ", np.unique(y_train, return_counts=True))
-        print("Unique preds = ", np.unique(clf.predict(X_train), return_counts=True))
-        print("Rules = ", clf.rl_.rules)
-    if verbosity >= 0:
-        print("-----------------------------------------------------------------")
-
-
-    rules_possibilities_list = []
-    rules_entropy_list = []
-
-    for j in range(len(clf.rl_.rules)):
-        aRule = clf.rl_.rules[j]
-        rule_support = sum(aRule['train_labels'])
-        if aRule['antecedents'] == [0]: # default decision
-            # number of possible worlds is all but those of the prefix's rules
-            n_possible_worlds_rule = single_example_possibilities - np.sum(rules_possibilities_list)
-        else: # general case
-            n_possible_worlds_rule = capt_rl(j, clf.rl_.rules) # call recursive formula
-            n_elementary_tokens += len(aRule['antecedents'])
-            n_branches_rules += 1
-        rule_single_example_entropy = compute_entropy_single_example(n_possible_worlds_rule)
-
-        rules_possibilities_list.append(n_possible_worlds_rule)
-        rules_entropy_list.append(rule_single_example_entropy * rule_support)
-
-    if verbosity >= 2:
-        print("# possible worlds per rule: ", rules_possibilities_list)
-        print("total entropy per rule: ", rules_entropy_list)
-    
-    reconstructed_dataset_entropy = sum(rules_entropy_list)
-    entropy_reduction_ratio = reconstructed_dataset_entropy/no_knowledge_dataset_entropy
-
-elif method == "DL8.5":
-    # DL8.5 parameters
-    max_depth_param = 2
-
+if method == "DL8.5":
     # return the error and the majority class
     def error(sup_iter):
         supports = list(sup_iter)
@@ -244,9 +157,10 @@ elif method == "DL8.5":
     leaves_possibilities_list = []
     leaves_entropy_list = []
     leaves_support = []
+    leaves_single_example_entropy_list = []
 
     def explore_tree(tree, splits_list=[]): # Completes leaves_possibilities_list and leaves_entropy_list
-        global n_elementary_tokens, leaves_possibilities_list, leaves_entropy_list, leaves_support, n_branches_rules
+        global n_elementary_tokens, leaves_possibilities_list, leaves_entropy_list, leaves_support, n_branches_rules, n_elementary_tokens_path, average_tokens_per_examples
         if 'error' in tree: # leaf
             n_branches_rules += 1
             leaf_possibilities = num_possibilities(splits_list)
@@ -256,6 +170,9 @@ elif method == "DL8.5":
             leaf_entropy = compute_entropy_single_example(leaf_possibilities)
             leaves_entropy_list.append(leaf_entropy * tree['support'])
             leaves_support.append(tree['support'])
+            average_tokens_per_examples += tree['support'] * len(splits_list)
+            n_elementary_tokens_path += len(splits_list)
+            leaves_single_example_entropy_list.append(leaf_entropy)
         else: # internal node (at least one child)
             n_elementary_tokens += 1
             new_splits_list_left = splits_list+ [tree['feat']]
@@ -265,15 +182,19 @@ elif method == "DL8.5":
             if 'right' in tree:
                 explore_tree(tree['right'], splits_list=new_splits_list_right)
                 
-    clf = DL85Classifier(max_depth=max_depth_param, min_sup = trees_min_sample_leaves, fast_error_function=error, time_limit=max_time)
+    clf = DL85Classifier(max_depth=max_depth, min_sup = trees_min_sample_leaves, fast_error_function=error, time_limit=max_time)
     start = time.perf_counter()
     clf.fit(X_train, y_train)
     duration = time.perf_counter() - start
+    
+    train_acc = np.mean(y_train == clf.predict(X_train))
+    test_acc = np.mean(y_test == clf.predict(X_test))
+    complete_tree(clf.tree_) # self-made procedure to explicitly compute, check and append the support of each leaf (already contained via #errors and probas but rounded)
     if verbosity >= 0:
         print("Model built. Duration of building =", round(duration, 4))
-        print("Accuracy DL8.5 on training set =", round(clf.accuracy_, 4))
+        #print("Accuracy DL8.5 on training set =", round(clf.accuracy_, 4))
+        print("Accuracy DL8.5 on training set =", round(train_acc, 4))
         
-        complete_tree(clf.tree_) # self-made procedure to explicitly compute, check and append the support of each leaf (already contained via #errors and probas but rounded)
         print_tree(clf.tree_)
 
         print("-----------------------------------------------------------------")
@@ -281,7 +202,7 @@ elif method == "DL8.5":
     explore_tree(clf.tree_)
 
     assert(sum(leaves_support) == n_samples) # better double checking
-
+    average_tokens_per_examples /= n_samples
     if verbosity >= 2:
         print("# possible worlds per rule: ", leaves_possibilities_list)
         print("total entropy per rule: ", leaves_entropy_list)
@@ -289,22 +210,25 @@ elif method == "DL8.5":
 
     reconstructed_dataset_entropy = sum(leaves_entropy_list)
     entropy_reduction_ratio = reconstructed_dataset_entropy/no_knowledge_dataset_entropy
+    
     # print the tree
     import graphviz
     dot = clf.export_graphviz()
     graph = graphviz.Source(dot, format=plot_extension)
     graph.render("./DL8.5_tree_%s" %dataset)
+    res = [[dataset, method, random_state_value, min_support, max_depth, duration, train_acc, test_acc, reconstructed_dataset_entropy, no_knowledge_dataset_entropy, n_elementary_tokens, n_branches_rules, entropy_reduction_ratio, average_tokens_per_examples, n_elementary_tokens_path, leaves_support, leaves_single_example_entropy_list]]
 
 elif method == "sklearn_DT":
-    # Sklearn DecisionTreeClassifier parameters
-    max_depth_param = 2
-    
-    clf = DecisionTreeClassifier(random_state=1+random_state_value, max_depth=max_depth_param, min_samples_leaf=trees_min_sample_leaves)
+
+    clf = DecisionTreeClassifier(random_state=1+random_state_value, max_depth=max_depth, min_samples_leaf=trees_min_sample_leaves)
 
     start = time.perf_counter()
     clf.fit(X_train, y_train)
     duration = time.perf_counter() - start
+
     train_acc = clf.score(X_train, y_train)
+    test_acc = clf.score(X_test, y_test)
+
     if verbosity >= 0:
         print("Model built. Duration of building =", round(duration, 4))
         print("Accuracy CART (sklearn) on training set =", round(train_acc, 4))
@@ -365,12 +289,14 @@ elif method == "sklearn_DT":
         
     leaves_possibilities_list = []
     leaves_entropy_list = []
+    leaves_single_example_entropy_list = []
     leaves_support = []
 
-    for a_possible_split in nodes_features:
+    for a_possible_split in nodes_features: # Count internal nodes
         if a_possible_split != -2:
             n_elementary_tokens += 1
-    for a_branch in all_branches:
+    
+    for a_branch in all_branches: # 
         n_branches_rules += 1
         splits_list = []
         leaf_support = -1
@@ -387,9 +313,13 @@ elif method == "sklearn_DT":
         leaves_possibilities_list.append(leaf_possibilities)
         leaf_entropy = compute_entropy_single_example(leaf_possibilities)
         leaves_entropy_list.append(leaf_entropy * leaf_support)
+        leaves_single_example_entropy_list.append(leaf_entropy)
         leaves_support.append(leaf_support)
+        average_tokens_per_examples += (leaf_support * len(splits_list))
+        n_elementary_tokens_path += len(splits_list)
 
     assert(sum(leaves_support) == n_samples) # better double checking
+    average_tokens_per_examples /= n_samples
 
     if verbosity >= 2:
         print("# possible worlds per rule: ", leaves_possibilities_list)
@@ -398,14 +328,45 @@ elif method == "sklearn_DT":
     reconstructed_dataset_entropy = sum(leaves_entropy_list)
     entropy_reduction_ratio = reconstructed_dataset_entropy/no_knowledge_dataset_entropy
 
-    from sklearn.tree import plot_tree
+    '''from sklearn.tree import plot_tree
     import matplotlib.pyplot as plt
     plot_tree(clf, filled=True)#, feature_names = features)
-    plt.savefig("./sklearn_tree_%s.%s" %(dataset, plot_extension), bbox_inches='tight')
-    plt.clf()
+    plt.savefig("./results/sklearn_tree_%s.%s" %(dataset, plot_extension), bbox_inches='tight')
+    plt.clf()'''
+
+    res = [[dataset, method, random_state_value, min_support, max_depth, duration, train_acc, test_acc, reconstructed_dataset_entropy, no_knowledge_dataset_entropy, n_elementary_tokens, n_branches_rules, entropy_reduction_ratio, average_tokens_per_examples, n_elementary_tokens_path, leaves_support, leaves_single_example_entropy_list]]
 
 else:
     raise ValueError("Unknown method " + str(method))
+
+sorted_leaves_support = np.asarray([x for _, x in sorted(zip(leaves_single_example_entropy_list, leaves_support))])
+sorted_leaves_single_example_entropy_list = np.sort(leaves_single_example_entropy_list)
+sorted_leaves_support = np.cumsum(sorted_leaves_support)
+
+'''
+import matplotlib.pyplot as plt
+plt.plot(sorted_leaves_support, sorted_leaves_single_example_entropy_list)
+
+plt.savefig("./results/tree_cdf_entropy_%s.%s" %(dataset, plot_extension), bbox_inches='tight')
+'''
+
+# Gather the results for the 5 folds on process 0
+if ccanada_expes:
+    res = comm.gather(res, root=0)
+
+if rank == 0 or not ccanada_expes:
+    # save results
+    fileName = './results/%s_%s.csv' %(method, dataset) #_proportions
+    import csv
+    with open(fileName, mode='w') as csv_file:
+        csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(['dataset', 'method', 'random_state_value', 'min_support', 'max_depth', 'duration', 'train_acc', 'test_acc', 'reconstructed_dataset_entropy', 'no_knowledge_dataset_entropy', 'n_elementary_tokens', 'n_branches_rules', 'entropy_reduction_ratio', 'average_tokens_per_examples', 'n_elementary_tokens_path', 'leaves_support', 'sorted_leaves_single_example_entropy_list'])
+        for i in range(len(res)):
+            if ccanada_expes:
+                for j in range(len(res[i])):
+                    csv_writer.writerow(res[i][j])
+            else:
+                csv_writer.writerow(res[i])
 
 if verbosity >= 0:
     print("Reconstructed dataset joint entropy (with no knowledge) = ", reconstructed_dataset_entropy)
