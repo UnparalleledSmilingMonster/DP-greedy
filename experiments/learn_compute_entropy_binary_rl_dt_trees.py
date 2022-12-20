@@ -215,7 +215,8 @@ if method == "DL8.5":
     import graphviz
     dot = clf.export_graphviz()
     graph = graphviz.Source(dot, format=plot_extension)
-    graph.render("./DL8.5_tree_%s" %dataset)
+    graph.render("./models/DL8.5_tree_%s_%d_%.2f_%d" %(dataset, max_depth, min_support, random_state_value))
+
     res = [[dataset, method, random_state_value, min_support, max_depth, duration, train_acc, test_acc, reconstructed_dataset_entropy, no_knowledge_dataset_entropy, n_elementary_tokens, n_branches_rules, entropy_reduction_ratio, average_tokens_per_examples, n_elementary_tokens_path, leaves_support, leaves_single_example_entropy_list]]
 
 elif method == "sklearn_DT":
@@ -328,22 +329,23 @@ elif method == "sklearn_DT":
     reconstructed_dataset_entropy = sum(leaves_entropy_list)
     entropy_reduction_ratio = reconstructed_dataset_entropy/no_knowledge_dataset_entropy
 
-    '''from sklearn.tree import plot_tree
+    from sklearn.tree import plot_tree
     import matplotlib.pyplot as plt
     plot_tree(clf, filled=True)#, feature_names = features)
-    plt.savefig("./results/sklearn_tree_%s.%s" %(dataset, plot_extension), bbox_inches='tight')
-    plt.clf()'''
+    plt.savefig("./models/sklearn_tree_%s_%d_%.2f_%d.%s" %(dataset, max_depth, min_support, random_state_value, plot_extension), bbox_inches='tight')
+    plt.clf()
 
     res = [[dataset, method, random_state_value, min_support, max_depth, duration, train_acc, test_acc, reconstructed_dataset_entropy, no_knowledge_dataset_entropy, n_elementary_tokens, n_branches_rules, entropy_reduction_ratio, average_tokens_per_examples, n_elementary_tokens_path, leaves_support, leaves_single_example_entropy_list]]
 
 else:
     raise ValueError("Unknown method " + str(method))
 
+'''
 sorted_leaves_support = np.asarray([x for _, x in sorted(zip(leaves_single_example_entropy_list, leaves_support))])
 sorted_leaves_single_example_entropy_list = np.sort(leaves_single_example_entropy_list)
 sorted_leaves_support = np.cumsum(sorted_leaves_support)
 
-'''
+
 import matplotlib.pyplot as plt
 plt.plot(sorted_leaves_support, sorted_leaves_single_example_entropy_list)
 
