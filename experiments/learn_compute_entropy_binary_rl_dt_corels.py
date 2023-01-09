@@ -196,7 +196,7 @@ if method == "CORELS":
     average_tokens_per_examples /= n_samples
     ## average_tokens_per_examples, n_elementary_tokens_path, leaves_support, leaves_single_example_entropy_list
     model = str(clf.rl_)
-    res = [[dataset, method, random_state_value, min_support, max_depth, max_width, duration, train_acc, test_acc, reconstructed_dataset_entropy, no_knowledge_dataset_entropy, n_elementary_tokens, n_branches_rules, entropy_reduction_ratio, average_tokens_per_examples, n_elementary_tokens_path, leaves_support, leaves_single_example_entropy_list, model]]
+    res = [[dataset, method, random_state_value, min_support, max_depth, max_width, duration, train_acc, test_acc, reconstructed_dataset_entropy, no_knowledge_dataset_entropy, n_elementary_tokens, n_branches_rules, entropy_reduction_ratio, average_tokens_per_examples, n_elementary_tokens_path, leaves_support, leaves_single_example_entropy_list, model, clf.get_status()]]
 
 else:
     print("method " + method + "unknown.")
@@ -212,7 +212,7 @@ if rank == 0 or not ccanada_expes:
     import csv
     with open(fileName, mode='w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow(['dataset', 'method', 'random_state_value', 'min_support', 'max_depth', 'max_width', 'duration', 'train_acc', 'test_acc', 'reconstructed_dataset_entropy', 'no_knowledge_dataset_entropy', 'n_elementary_tokens', 'n_branches_rules', 'entropy_reduction_ratio', 'average_tokens_per_examples', 'n_elementary_tokens_path', 'leaves_support', 'sorted_leaves_single_example_entropy_list'])
+        csv_writer.writerow(['dataset', 'method', 'random_state_value', 'min_support', 'max_depth', 'max_width', 'duration', 'train_acc', 'test_acc', 'reconstructed_dataset_entropy', 'no_knowledge_dataset_entropy', 'n_elementary_tokens', 'n_branches_rules', 'entropy_reduction_ratio', 'average_tokens_per_examples', 'n_elementary_tokens_path', 'leaves_support', 'sorted_leaves_single_example_entropy_list', 'status'])
         for i in range(len(res)):
             if ccanada_expes:
                 for j in range(len(res[i])):
