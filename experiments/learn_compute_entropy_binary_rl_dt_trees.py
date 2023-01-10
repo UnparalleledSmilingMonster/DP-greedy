@@ -15,7 +15,7 @@ if ccanada_expes:
 
 
 parser = argparse.ArgumentParser(description='Probabilistic dataset reconstruction from interpretable model experiments')
-parser.add_argument('--expe_id', type=int, default=0, choices= [0,1], help='method-dataset combination (for now, only COMPAS supported)')
+parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3], help='method-dataset combination (for now, only COMPAS supported)')
 args = parser.parse_args()
 
 if ccanada_expes:
@@ -34,7 +34,7 @@ max_time = 3600 # seconds
 
 # Slurm task parallelism
 expe_id=args.expe_id
-datasets = ["compas"]
+datasets = ["compas", "adult"]
 methods = ["DL8.5", "sklearn_DT"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
 slurm_expes = []
 for d in datasets:
@@ -46,6 +46,7 @@ method = slurm_expes[expe_id][1]
 
 if verbosity >= 0:
     print("Slurm #expes = ", len(slurm_expes))
+    print("Current expe: dataset %s, method %s" %(dataset, method))
 # MPI parallelism
 random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
 min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
@@ -71,7 +72,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_ra
 total_features = X_train.shape[1]
 n_samples = y_train.size
 if verbosity >= 0:
-    print("Dataset shape: ", X.shape)
+    print("Dataset shape: ", X.shape, "prediction is ", prediction)
     print("Training set shape: ", X_train.shape)
     print("-----------------------------------------------------------------")
 
