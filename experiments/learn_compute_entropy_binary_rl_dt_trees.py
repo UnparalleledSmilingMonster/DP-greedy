@@ -15,7 +15,7 @@ if ccanada_expes:
 
 
 parser = argparse.ArgumentParser(description='Probabilistic dataset reconstruction from interpretable model experiments')
-parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3], help='method-dataset combination (for now, only COMPAS supported)')
+parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3], help='method-dataset combination (for now, only COMPAS and tic-tac-toe supported)')
 args = parser.parse_args()
 
 if ccanada_expes:
@@ -24,7 +24,7 @@ if ccanada_expes:
     size = comm.Get_size()
     verbosity = -1 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
 else:
-    rank = 0
+    rank = 249
     verbosity = 2 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
     
 # Script parameters
@@ -34,24 +34,28 @@ max_time = 3600 # seconds
 
 # Slurm task parallelism
 expe_id=args.expe_id
-datasets = ["compas", "adult"]
+datasets = ["compas", "tic-tac-toe"]
 methods = ["DL8.5", "sklearn_DT"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
 slurm_expes = []
 for d in datasets:
     for m in methods:
         slurm_expes.append([d, m])
 
-dataset = slurm_expes[expe_id][0]
-method = slurm_expes[expe_id][1]
+dataset = slurm_expes[expe_id][0] # "tic-tac-toe" # "compas"
+method = slurm_expes[expe_id][1] # "DL8.5" # "sklearn_DT"
 
 if verbosity >= 0:
     print("Slurm #expes = ", len(slurm_expes))
     print("Current expe: dataset %s, method %s" %(dataset, method))
+
 # MPI parallelism
 random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
 min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
 max_depth_params = [i for i in range(1,11)]
 
+if dataset == "tic-tac-toe":
+    min_support_params.append(0.005)
+    min_support_params.append(0.001)
 
 configs_list = []
 for rs in random_seeds: # 5 values
@@ -65,9 +69,20 @@ max_depth = configs_list[rank][2]
 
 if verbosity >= 0:
     print("MPI #params = ", len(configs_list))
+    print("Current expe: random_state_value %d, min_support %.3f, max_depth %d" %(random_state_value, min_support, max_depth))
 
 # Load the data
-X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
+if dataset in ["compas", 'adult']:
+    X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
+else: # datasets from the pydl8.5 repository
+    data_full = np.genfromtxt("data/%s.txt" %dataset, delimiter=' ')
+    X = data_full[:, 1:]
+    y = data_full[:, 0]
+    X = X.astype('int32')
+    y = y.astype('int32')
+    features, prediction = "na", "na"
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_ratio, random_state=random_state_value)
 total_features = X_train.shape[1]
 n_samples = y_train.size
@@ -78,7 +93,7 @@ if verbosity >= 0:
 
 X = "shouldnotbeusedanymore"
 y = "shouldnotbeusedanymore"
-trees_min_sample_leaves = int(min_support * n_samples)
+trees_min_sample_leaves = max([1,int(min_support * n_samples)])
 
 # NO-KNOWLEDGE DATASET computations
 single_example_possibilities = 2**(total_features) #num_possibilities([]) #2**X.shape[1] # Binary features

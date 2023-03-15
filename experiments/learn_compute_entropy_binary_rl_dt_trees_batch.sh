@@ -8,4 +8,4 @@
 #SBATCH -e slurm_out/slurmout_%A.errarray
 #SBATCH --array=2-3
 
-srun -W 4800 -n 250 python3.10 learn_compute_entropy_binary_rl_dt_trees.py --expe_id=${SLURM_ARRAY_TASK_ID}
+srun -W 4800 -n 350 python3.10 learn_compute_entropy_binary_rl_dt_trees.py --expe_id=${SLURM_ARRAY_TASK_ID}
