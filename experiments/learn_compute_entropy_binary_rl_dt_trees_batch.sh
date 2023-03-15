@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -n 250
+#SBATCH -n 350
 #SBATCH --mem-per-cpu=9000
 #SBATCH --time=1:30:00
 #SBATCH --job-name=expes_pre_last
