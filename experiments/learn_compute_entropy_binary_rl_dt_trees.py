@@ -24,7 +24,7 @@ if ccanada_expes:
     size = comm.Get_size()
     verbosity = -1 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
 else:
-    rank = 249
+    rank = 9
     verbosity = 2 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
     
 # Script parameters
@@ -50,7 +50,7 @@ if verbosity >= 0:
 
 # MPI parallelism
 random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
-min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
+min_support_params = [0.01*i for i in range(2,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
 max_depth_params = [i for i in range(1,11)]
 
 if dataset == "tic-tac-toe":
