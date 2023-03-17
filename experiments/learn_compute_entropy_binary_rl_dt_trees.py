@@ -15,7 +15,7 @@ if ccanada_expes:
 
 
 parser = argparse.ArgumentParser(description='Probabilistic dataset reconstruction from interpretable model experiments')
-parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3], help='method-dataset combination (for now, only COMPAS and tic-tac-toe supported)')
+parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3,4,5], help='method-dataset combination (for now, only COMPAS and tic-tac-toe supported)')
 args = parser.parse_args()
 
 if ccanada_expes:
@@ -34,7 +34,7 @@ max_time = 3600 # seconds
 
 # Slurm task parallelism
 expe_id=args.expe_id
-datasets = ["compas", "tic-tac-toe"]
+datasets = ["compas", "tic-tac-toe", "primary-tumor"]
 methods = ["DL8.5", "sklearn_DT"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
 slurm_expes = []
 for d in datasets:
@@ -50,7 +50,7 @@ if verbosity >= 0:
 
 # MPI parallelism
 random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
-min_support_params = [0.01]#[0.01*i for i in range(2,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
+min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
 max_depth_params = [i for i in range(1,11)]
 
 #if dataset == "tic-tac-toe":
@@ -374,7 +374,7 @@ if ccanada_expes:
 
 if rank == 0 or not ccanada_expes:
     # save results
-    fileName = './results/%s_%s_rerun.csv' %(method, dataset) #_proportions
+    fileName = './results/%s_%s.csv' %(method, dataset) #_proportions
     import csv
     with open(fileName, mode='w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
