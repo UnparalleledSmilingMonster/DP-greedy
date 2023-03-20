@@ -14,7 +14,7 @@ if ccanada_expes:
 
 
 parser = argparse.ArgumentParser(description='Probabilistic dataset reconstruction from interpretable model experiments')
-parser.add_argument('--expe_id', type=int, default=0, choices= [0], help='method-dataset combination (for now, only COMPAS supported)')
+parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3], help='method-dataset combination (for now, only COMPAS and tic-tac-toe supported)')
 args = parser.parse_args()
 
 if ccanada_expes:
@@ -33,23 +33,23 @@ max_time = 3600 # seconds
 
 # Slurm task parallelism
 expe_id=args.expe_id
-datasets = ["compas"]
-methods = ["CORELS"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
+datasets = ["compas", "tic-tac-toe"]
+methods = ["CORELS", "Greedy"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
 slurm_expes = []
 for d in datasets:
     for m in methods:
         slurm_expes.append([d, m])
 
-dataset = "segment" #slurm_expes[expe_id][0]
-method = slurm_expes[expe_id][1]
+dataset = "compas" #slurm_expes[expe_id][0]
+method = "CORELS" #slurm_expes[expe_id][1]
 
 if verbosity >= 0:
     print("Slurm #expes = ", len(slurm_expes))
 # MPI parallelism
-random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
+random_seeds = 0# [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
 min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
 max_depth_params = [i for i in range(1,11)]
-max_width_params = [i for i in range(1,3)]
+max_width_params = [1] # [i for i in range(1,3)]
 
 configs_list = []
 for rs in random_seeds: # 5 values

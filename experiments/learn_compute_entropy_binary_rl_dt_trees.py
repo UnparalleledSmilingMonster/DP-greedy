@@ -24,7 +24,7 @@ if ccanada_expes:
     size = comm.Get_size()
     verbosity = -1 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
 else:
-    rank = 9
+    rank = 59 # 59
     verbosity = 2 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
     
 # Script parameters
@@ -34,7 +34,7 @@ max_time = 3600 # seconds
 
 # Slurm task parallelism
 expe_id=args.expe_id
-datasets = ["compas", "tic-tac-toe", "primary-tumor"]
+datasets = ["compas", "tic-tac-toe", "zoo-1"]
 methods = ["DL8.5", "sklearn_DT"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
 slurm_expes = []
 for d in datasets:
