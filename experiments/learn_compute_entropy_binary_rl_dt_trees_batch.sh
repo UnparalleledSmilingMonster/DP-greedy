@@ -6,6 +6,6 @@
 #SBATCH --job-name=expes_pre_last
 #SBATCH -o slurm_out/slurmout_%A.out
 #SBATCH -e slurm_out/slurmout_%A.errarray
-#SBATCH --array=4-5
+#SBATCH --array=6-7
 
 srun -W 4800 -n 250 python3.10 learn_compute_entropy_binary_rl_dt_trees.py --expe_id=${SLURM_ARRAY_TASK_ID}
