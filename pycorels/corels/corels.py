@@ -388,7 +388,8 @@ class CorelsClassifier:
             "verbosity": self.verbosity,
             "ablation": self.ablation,
             "max_card": self.max_card,
-            "min_support": self.min_support
+            "min_support": self.min_support,
+            "max_length": self.max_length
         }
 
     def set_params(self, **params):
