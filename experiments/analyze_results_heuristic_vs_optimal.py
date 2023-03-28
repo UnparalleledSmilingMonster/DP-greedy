@@ -1,19 +1,24 @@
+import matplotlib 
 import matplotlib.pyplot as plt 
 import numpy as np 
 import pandas as pd
 from matplotlib.lines import Line2D
 from scipy.interpolate import interp1d
-figures_folder = 'Figures/Optimal_vs_Heuristic'
-extension = "png"
+figures_folder = 'Figures/Optimal_vs_Heuristic_DTs'
+extension = "pdf"
 n_folds = 5
+
+matplotlib.rcParams.update({'font.size': 12.0}) # default = 10.0
+
 # Slurm task parallelism
-datasets = ["compas", "adult"]
+datasets = ["tic-tac-toe", "compas", "adult"]
 methods = ["DL8.5", "sklearn_DT"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)   
 criteria = ['entropy_reduction_ratio', 'n_elementary_tokens', 'n_branches_rules', 'average_tokens_per_examples', 'n_elementary_tokens_path', 'test_acc', 'train_acc']
 
 # MPI parallelism
 random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
 min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
+#min_support_params.extend([0.001, 0.005])
 max_depth_params = [i for i in range(1,11)]
 
 # Plotting parameters
@@ -46,6 +51,7 @@ for dataset in datasets:
     res_dict[dataset] = dict()
 
     for method in methods:
+        max_duration = -1
         res_dict[dataset][method] = dict()
 
         # Find per dataset-method results file
@@ -66,9 +72,13 @@ for dataset in datasets:
             # Read parameters
             random_state_value = row['random_state_value']
             min_support = row['min_support']
+            if not (min_support in min_support_params): # possible other values that I added for some experiments but don't want to use here
+                continue
             max_depth = row['max_depth']
         
             # Read results
+            if row['duration'] > max_duration:
+                max_duration = row['duration']
             '''duration = row['duration']
             train_acc = row['train_acc']
             test_acc = row['test_acc']
@@ -114,6 +124,7 @@ for dataset in datasets:
                 res_dict[dataset][method][max_depth][min_support]['leaves_supports'].append(normalized_leaves_supports)
                 res_dict[dataset][method][max_depth][min_support]['leaves_entropies'].append(normalized_leaves_entropies)
         
+        print("Method %s dataset %s, max_duration = " %(method, dataset), max_duration)
         # Average over the folds
         for max_depth in res_dict[dataset][method].keys():
             for min_support in res_dict[dataset][method][max_depth].keys():
@@ -177,6 +188,15 @@ for dataset in datasets:
     plt.ylabel('$\mathsf{Dist}_G(\mathcal{W}_{\mathcal{DT}},\mathcal{D}_{orig})$') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
     
     plot_name = '0_entropy_reduction_ratio_f_max_depth'
+
+    # to include legend within plot directly uncomment the following:
+    #legend_elements = []
+    #for method in methods:
+    #    legend_elements.append(Line2D([0], [0], color='black', linestyle=linestyles[method], label=method, marker=markers[method], markersize=markersizes[method]))
+    #for min_support in min_support_params:
+    #    legend_elements.append(Line2D([0], [0], markersize=markersizes[method], marker='o', color=depthcolors[min_support], lw=1, linestyle='None', label='min support %.2f' %min_support))
+    #plt.legend(handles=legend_elements, loc='best')#, ncol=4)
+    plt.title("%s dataset" %dataset.capitalize())
     plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')
     plt.clf()
 
@@ -203,6 +223,7 @@ for dataset in datasets:
     plt.ylabel('$\mathsf{Dist}_G(\mathcal{W}_{\mathcal{DT}},\mathcal{D}_{orig})$') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
     
     plot_name = '4_entropy_reduction_ratio_f_n_elementary_tokens'
+    plt.title("%s dataset" %dataset.capitalize())
     plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')
     plt.clf()
 
@@ -228,6 +249,7 @@ for dataset in datasets:
     plt.xlabel('Max. depth') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
     
     plot_name = '1_average_tokens_per_examples_f_max_depth'
+    plt.title("%s dataset" %dataset.capitalize())
     plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')
     plt.clf()
 
@@ -253,6 +275,7 @@ for dataset in datasets:
     plt.xlabel('Max. depth') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
     
     plot_name = '2_n_elementary_tokens_f_max_depth'
+    plt.title("%s dataset" %dataset.capitalize())
     plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')
     plt.clf()
 
@@ -278,6 +301,7 @@ for dataset in datasets:
     plt.xlabel('Max. depth') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
     
     plot_name = 'n_branches_f_max_depth'
+    plt.title("%s dataset" %dataset.capitalize())
     plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')
     plt.clf()
 
@@ -304,6 +328,7 @@ for dataset in datasets:
     plt.ylabel('$\mathsf{Dist}_G(\mathcal{W}_{\mathcal{DT}},\mathcal{D}_{orig})$') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
     
     plot_name = '3_entropy_reduction_ratio_f_train_acc_list'
+    plt.title("%s dataset" %dataset.capitalize())
     plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')
     plt.clf()
 
@@ -330,6 +355,7 @@ for dataset in datasets:
     plt.ylabel('$\mathsf{Dist}_G(\mathcal{W}_{\mathcal{DT}},\mathcal{D}_{orig})$') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
     
     plot_name = 'entropy_reduction_ratio_f_test_acc'
+    plt.title("%s dataset" %dataset.capitalize())
     plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')
     plt.clf()
 
@@ -356,6 +382,7 @@ for dataset in datasets:
     plt.xlabel('# elementary tokens') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
     
     plot_name = 'train_acc_f_n_elementary_tokens'
+    plt.title("%s dataset" %dataset.capitalize())
     plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')
     plt.clf()
 
@@ -401,9 +428,11 @@ for dataset in datasets:
             for min_support in min_supports_list:
                 #max_depth = max(max_depth_params)
                 plt.plot(res_dict[dataset][method][max_depth][min_support]['leaves_entropy_f_support'][0], res_dict[dataset][method][max_depth][min_support]['leaves_entropy_f_support'][1], linestyle=linestyles[method], marker=None, markersize=markersizes[method], c=depthcolors[min_support]) #, label='min support %.2f' %min_support, marker=markers[method]
-        plt.title("Max. depth %d" %max_depth)
-        plt.xlabel('#examples (cumulated)')
-        plt.ylabel('max. entropy reduction') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
+        
+        plt.title("%s dataset, max. depth = %d" %(dataset.capitalize(), max_depth))
+
+        plt.xlabel('%examples (cumulated)')
+        plt.ylabel('$\mathsf{Dist}_G(\mathcal{W}_{\mathcal{DT}},\mathcal{D}_{orig})$') #  \newmetric(\generalizedpdataset_{\interpretablemodel},\pdataset_{orig})
         
         plot_name = 'entropy_f_n_samples_max_depth_%d' %max_depth
         plt.savefig("%s/%s_%s.%s" %(figures_folder, dataset, plot_name, extension), bbox_inches='tight')

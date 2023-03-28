@@ -24,7 +24,7 @@ if ccanada_expes:
     size = comm.Get_size()
     verbosity = -1 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
 else:
-    rank = 19 # 59
+    rank = 198 # 59
     verbosity = 2 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
     
 # Script parameters
@@ -64,7 +64,7 @@ for rs in random_seeds: # 5 values
             configs_list.append([rs, msp, mdp])
 
 random_state_value = configs_list[rank][0]
-min_support = configs_list[rank][1]
+min_support = 0.0001 # configs_list[rank][1]
 max_depth = configs_list[rank][2]
 
 if verbosity >= 0:
