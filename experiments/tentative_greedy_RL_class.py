@@ -6,11 +6,11 @@ from HeuristicRL import GreedyRLClassifier
 import numpy as np
 
 dataset = "compas"
-min_support = 0.01
-max_length = 50
-max_card = 3
+min_support = 0.05
+max_length = 5
+max_card = 2
 compute_exact = False
-verbosity = ["mine"] # ["mine"]
+verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
 
 print(X.shape)
