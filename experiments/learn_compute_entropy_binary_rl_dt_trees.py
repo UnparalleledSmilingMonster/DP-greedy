@@ -15,7 +15,7 @@ if ccanada_expes:
 
 
 parser = argparse.ArgumentParser(description='Probabilistic dataset reconstruction from interpretable model experiments')
-parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3,4,5,6,7,8,9], help='method-dataset combination (for now, only COMPAS and tic-tac-toe supported)')
+parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3], help='method-dataset combination (for now, only COMPAS and tic-tac-toe supported)')
 args = parser.parse_args()
 
 if ccanada_expes:
@@ -34,7 +34,7 @@ max_time = 3600 # seconds
 
 # Slurm task parallelism
 expe_id=args.expe_id
-datasets = ["compas", "tic-tac-toe", "zoo-1", "vote", "lymph"]
+datasets = ["compas", "tic-tac-toe"] #, "zoo-1", "vote", "lymph"]
 methods = ["DL8.5", "sklearn_DT"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
 slurm_expes = []
 for d in datasets:
@@ -64,7 +64,7 @@ for rs in random_seeds: # 5 values
             configs_list.append([rs, msp, mdp])
 
 random_state_value = configs_list[rank][0]
-min_support = 0.0001 # configs_list[rank][1]
+min_support = configs_list[rank][1]
 max_depth = configs_list[rank][2]
 
 if verbosity >= 0:
