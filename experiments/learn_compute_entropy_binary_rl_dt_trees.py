@@ -2,8 +2,6 @@ from pydl85 import DL85Classifier
 from corels import *
 import time
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 import numpy as np 
 from expes_utils import compute_entropy_single_example
 from sklearn.tree import DecisionTreeClassifier
