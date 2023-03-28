@@ -22,7 +22,7 @@ if ccanada_expes:
     size = comm.Get_size()
     verbosity = -1 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
 else:
-    rank = 198 # 59
+    rank = 0 # 59
     verbosity = 2 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
     
 # Script parameters
