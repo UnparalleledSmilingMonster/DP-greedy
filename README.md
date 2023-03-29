@@ -14,6 +14,7 @@ Folder `experiments` contains all the scripts and data to reproduce our experime
 For Decision Trees:
 * `learn_compute_entropy_binary_rl_dt_trees.py` can be used to run the experiments comparing optimal (learnt with DL8.5) and non-optimal (learnt with sklearn implementation of CART) Decision Trees
 * `learn_compute_entropy_binary_rl_dt_trees_batch.sh` can be used to launch the previously mentioned experiments on a computing platform
-* `analyze_results_heuristic_vs_optimal.py` can be used to generate the Figures comparing optimal (learnt with DL8.5) and non-optimal (learnt with sklearn implementation of CART) Decision Trees
+* `analyze_results_heuristic_vs_optimal.py` can be used to generate the Figures comparing optimal (learnt with DL8.5) and non-optimal (learnt with sklearn implementation of CART) Decision Trees - generates many plots for the sake of exploration
+* `generate_paper_plots_heuristic_vs_optimal_DTs.py` does the same as above but only for the paper's figures
 
 Folder `data` contains the datasets used in our experiments (and many others!)
