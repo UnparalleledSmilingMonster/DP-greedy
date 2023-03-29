@@ -31,7 +31,7 @@ else:
 test_size_ratio = 0.2 # only to check generalization
 plot_extension = "pdf"
 max_time = 3600 # seconds
-max_memory = 10000 # megabytes
+max_memory = 11000 # megabytes
 
 # Slurm task parallelism
 expe_id=args.expe_id
@@ -51,9 +51,9 @@ if verbosity >= 0:
 
 # MPI parallelism
 random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
-min_support_params = [0.01, 0.05] #*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
+min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
 max_depth_params = [i for i in range(1,11)]
-max_width_params = [i for i in range(1,4)]
+max_width_params = [1] #[i for i in range(1,4)]
 
 configs_list = []
 for rs in random_seeds: # 5 values
@@ -150,7 +150,7 @@ def capt_rl(j, all_rules):
 if method == "CORELS":
     # CORELS-specific parameters
     n_iter_param = 10 ** 9
-    policy_param = 'lower_bound'
+    policy_param = 'objective'
     # greater than zero to help pruning
     # but smaller than 1/n_samples because we don't want to trade-off accuracy
     cValue =  0.99*(1/n_samples) #n_examples_to_improve_f_obj/X.shape[0]
@@ -223,7 +223,7 @@ if ccanada_expes:
 
 if rank == 0 or not ccanada_expes:
     # save results
-    fileName = './results/%s_%s.csv' %(method, dataset) #_proportions
+    fileName = './results/%s_%s_expes_optimal_vs_heuristic.csv' %(method, dataset) #_proportions
     import csv
     with open(fileName, mode='w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
