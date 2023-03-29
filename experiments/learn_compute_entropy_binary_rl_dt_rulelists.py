@@ -24,7 +24,7 @@ if ccanada_expes:
     size = comm.Get_size()
     verbosity = -1 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
 else:
-    rank = 5
+    rank = 0
     verbosity = 2 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
     
 # Script parameters
@@ -158,7 +158,7 @@ if method == "CORELS":
     clf = CorelsClassifier(c=cValue, verbosity=corels_verbosity, policy=policy_param, n_iter=n_iter_param, max_card=max_width, max_length=max_depth, min_support=min_support) #, min_support=0.20)
 
 elif method == "GreedyRL":
-    
+
     clf = GreedyRLClassifier(min_support=min_support, max_length=max_depth, verbosity=corels_verbosity, max_card=max_width, allow_negations=True)
 
 else:
