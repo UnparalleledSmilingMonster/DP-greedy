@@ -15,7 +15,14 @@ class GreedyRLClassifier(CorelsClassifier):
         self.verbosity = verbosity
         self.status = 3
 
-    def fit(self, X, y, features=[], prediction_name="prediction"):
+    def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None):
+        if not (memory_limit is None):
+            import os, psutil
+
+        if not (time_limit is None):
+            import time
+            start = time.process_time() #clock()
+
         self.status = 0
         max_card = self.max_card
         min_support = self.min_support
@@ -38,29 +45,48 @@ class GreedyRLClassifier(CorelsClassifier):
         # Pre-mining of the rules (takes into account min support)
         list_of_rules, tot_rules = mine_rules_combinations(X, max_card, min_support, allow_negations, features, verbosity)
 
-        while (len(rules) < max_length) and not stop:
+        while (len(rules) < max_length) and (not stop) and (self.status == 0):
             # Greedy choice for next rule
 
             best_gini = 1.0 # worst value possible
+            best_capt_gini = 1.0
             best_rule = -1
             best_pred = -1
             best_rule_capt_indices = -1
 
             for a_rule in list_of_rules.copy(): # uses a copy of the full version as is before iterating as the list is then modified during iterations
-                
+                # Check memory limit
+                if not (memory_limit is None):
+                    mem_used = (psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
+                    if mem_used > memory_limit:
+                        self.status = 5
+                        break
+                #Check time limit
+                if not (time_limit is None):
+                    end = time.process_time() #clock()
+                    if end - start > time_limit:
+                        self.status = 4
+                        break
+
                 rule_capt_indices = rule_indices(a_rule, X_remain) #np.where(X_remain[:,a_rule] == 1)
                 n_samples_rule = rule_capt_indices[0].size
-
+                n_samples_remain = y_remain.size
+                n_samples_other = n_samples_remain - n_samples_rule
                 # Minimum support check
                 if (n_samples_rule/n_samples) >= min_support and (n_samples_rule/n_samples) > 0:
                     average_outcome_rule = np.average(y_remain[rule_capt_indices])
+                    average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
                     if average_outcome_rule < 0.5:
                         pred = 0
                     else:
                         pred = 1
-                    rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
-                    if rule_gini < best_gini:
+                    #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
+                    capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
+                    other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
+                    rule_gini = capt_gini + other_gini
+                    if (rule_gini < best_gini) or ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
                         best_gini = rule_gini
+                        best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
                         best_rule = a_rule
                         best_pred = pred
                         best_rule_capt_indices = rule_capt_indices
@@ -122,7 +148,8 @@ class GreedyRLClassifier(CorelsClassifier):
             list_of_chosen_rules.append(local_rule)
 
         self.rl_ = RuleList(rules=list_of_chosen_rules, features=features, prediction_name=prediction_name)
-        self.status = -2
+        if self.status == 0: # no memory or time limits reached during fitting
+            self.status = -2
 
     def __str__(self):
         s = "GreedyRLClassifier (" + str(self.get_params()) + ")"
@@ -140,6 +167,10 @@ class GreedyRLClassifier(CorelsClassifier):
             return "not_fitted"
         elif status == -2:
             return "fitted"
+        elif status == 4:
+            return "time_out"
+        elif status == 5:
+            return "memory_out"
         else:
             return "unknown"
 
