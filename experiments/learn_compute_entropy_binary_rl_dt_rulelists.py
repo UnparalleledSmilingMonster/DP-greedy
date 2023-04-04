@@ -15,7 +15,7 @@ if ccanada_expes:
 
 
 parser = argparse.ArgumentParser(description='Probabilistic dataset reconstruction from interpretable model experiments')
-parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3], help='method-dataset combination (for now, only COMPAS and tic-tac-toe supported)')
+parser.add_argument('--expe_id', type=int, default=0, choices= [0,1,2,3,4,5], help='method-dataset combination (for now, only COMPAS and tic-tac-toe supported)')
 args = parser.parse_args()
 
 if ccanada_expes:
@@ -24,7 +24,7 @@ if ccanada_expes:
     size = comm.Get_size()
     verbosity = -1 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
 else:
-    rank = 0
+    rank = 9
     verbosity = 2 # >= 0 minimal infos >=2 basic script infos >=3 CORELS infos >= 5 basic info about recursive computations >= 10 detailed info about recursive computations
     
 # Script parameters
@@ -35,7 +35,7 @@ max_memory = 11000 # megabytes
 
 # Slurm task parallelism
 expe_id=args.expe_id
-datasets = ["compas", "tic-tac-toe"]
+datasets = ["compas", "tic-tac-toe", "adult"]
 methods = ["CORELS", "GreedyRL"] # 0 for CORELS, 1 for DL8.5, 2 for sklearn DT (CART)    
 slurm_expes = []
 for d in datasets:
@@ -82,6 +82,12 @@ else: # datasets from the pydl8.5 repository
     y = y.astype('int32')
     features, prediction = ["feature_%d" %i for i in range(X.shape[1])], "pred"
 
+if dataset == "adult": # need to subsample
+    from sklearn.utils.random import sample_without_replacement
+    selected = sample_without_replacement(y.size, int(0.1*y.size), random_state=random_state_value)
+    X = X[selected,:]
+    y = y[selected]
+    
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_ratio, random_state=random_state_value)
 total_features = X_train.shape[1]
 n_samples = y_train.size
