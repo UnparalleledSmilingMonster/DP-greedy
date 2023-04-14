@@ -229,7 +229,7 @@ if ccanada_expes:
 
 if rank == 0 or not ccanada_expes:
     # save results
-    fileName = './results/%s_%s_expes_optimal_vs_heuristic.csv' %(method, dataset) #_proportions
+    fileName = './results/%snoredundancy_%s_expes_optimal_vs_heuristic.csv' %(method, dataset) #_proportions
     import csv
     with open(fileName, mode='w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
