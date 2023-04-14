@@ -47,9 +47,10 @@ class GreedyRLClassifier(CorelsClassifier):
 
         while (len(rules) < max_length) and (not stop) and (self.status == 0):
             # Greedy choice for next rule
-
-            best_gini = 1.0 # worst value possible
-            best_capt_gini = 1.0
+            average_outcome_remaining = np.average(y_remain)
+            best_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added
+            #print("Initial gini: ", best_gini)
+            best_capt_gini = (1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2) # only used to compare in case of equality
             best_rule = -1
             best_pred = -1
             best_rule_capt_indices = -1
@@ -84,7 +85,9 @@ class GreedyRLClassifier(CorelsClassifier):
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                     other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
                     rule_gini = capt_gini + other_gini
-                    if (rule_gini < best_gini) or ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
+                    if (rule_gini < best_gini) or \
+                        ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
+                        #print("-> new gini: ", rule_gini)
                         best_gini = rule_gini
                         best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
                         best_rule = a_rule
@@ -138,6 +141,19 @@ class GreedyRLClassifier(CorelsClassifier):
             rules.append([0])
             preds.append(pred)
 
+        # Post-processing step
+        initial_length = len(rules)
+        for nomatter in range(initial_length): # just to be sure to perform enough steps
+            if preds[len(rules) - 2] == preds[len(rules) - 1]:
+                # need to remove the last rule (before the default one)
+                cards[len(rules) - 1][0] += cards[len(rules) - 2][0]
+                cards[len(rules) - 1][1] += cards[len(rules) - 2][1]
+                cards.pop(len(rules) - 2)
+                preds.pop(len(rules) - 2)
+                rules.pop(len(rules) - 2)
+            else:
+                break 
+                
         # Builds a RuleList Python object (from pycorels)
         list_of_chosen_rules = []
         for i in range(len(rules)):
