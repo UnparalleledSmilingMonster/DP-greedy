@@ -15,7 +15,7 @@ class GreedyRLClassifier(CorelsClassifier):
         self.verbosity = verbosity
         self.status = 3
 
-    def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None):
+    def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
         if not (memory_limit is None):
             import os, psutil
 
@@ -141,18 +141,20 @@ class GreedyRLClassifier(CorelsClassifier):
             rules.append([0])
             preds.append(pred)
 
-        # Post-processing step
-        initial_length = len(rules)
-        for nomatter in range(initial_length): # just to be sure to perform enough steps
-            if preds[len(rules) - 2] == preds[len(rules) - 1]:
-                # need to remove the last rule (before the default one)
-                cards[len(rules) - 1][0] += cards[len(rules) - 2][0]
-                cards[len(rules) - 1][1] += cards[len(rules) - 2][1]
-                cards.pop(len(rules) - 2)
-                preds.pop(len(rules) - 2)
-                rules.pop(len(rules) - 2)
-            else:
-                break 
+        # Post-processing step: remove useless rules that do no change the classification function (i.e. rules before the default decision with the same prediction)
+        if perform_post_pruning:
+            initial_length = len(rules)
+            for nomatter in range(initial_length): # just to be sure to perform enough steps
+                if len(rules) > 1:
+                    if preds[len(rules) - 2] == preds[len(rules) - 1]:
+                        # need to remove the last rule (before the default one)
+                        cards[len(rules) - 1][0] += cards[len(rules) - 2][0]
+                        cards[len(rules) - 1][1] += cards[len(rules) - 2][1]
+                        cards.pop(len(rules) - 2)
+                        preds.pop(len(rules) - 2)
+                        rules.pop(len(rules) - 2)
+                    else:
+                        break 
                 
         # Builds a RuleList Python object (from pycorels)
         list_of_chosen_rules = []
