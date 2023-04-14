@@ -85,9 +85,11 @@ class GreedyRLClassifier(CorelsClassifier):
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                     other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
                     rule_gini = capt_gini + other_gini
+                    #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
                     if (rule_gini < best_gini) or \
                         ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
                         #print("-> new gini: ", rule_gini)
+                        #best_different_from_default = is_different_from_default # not used for now
                         best_gini = rule_gini
                         best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
                         best_rule = a_rule
