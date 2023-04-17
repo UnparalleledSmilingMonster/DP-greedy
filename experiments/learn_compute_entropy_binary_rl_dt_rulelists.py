@@ -53,7 +53,7 @@ if verbosity >= 0:
 random_seeds = [i for i in range(5)] # for 1) data train/test split and 2) methods initialization
 min_support_params = [0.01*i for i in range(1,6)] # minimum proportion of training examples that a rule (or a leaf) must capture
 max_depth_params = [i for i in range(1,11)]
-max_width_params = [1,2,3] #[i for i in range(1,4)]
+max_width_params = [1] #[i for i in range(1,4)]
 
 configs_list = []
 for rs in random_seeds: # 5 values
@@ -229,7 +229,7 @@ if ccanada_expes:
 
 if rank == 0 or not ccanada_expes:
     # save results
-    fileName = './results/%s_%s.csv' %(method, dataset) #_expes_optimal_vs_heuristic
+    fileName = './results/%s_%s_expes_optimal_vs_heuristic.csv' %(method, dataset) #_proportions
     import csv
     with open(fileName, mode='w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
