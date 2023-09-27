@@ -70,12 +70,12 @@ class GreedyRLClassifier(CorelsClassifier):
                         break
 
                 rule_capt_indices = rule_indices(a_rule, X_remain) #np.where(X_remain[:,a_rule] == 1)
-                n_samples_rule = rule_capt_indices[0].size
+                n_samples_rule = rule_capt_indices[0].size  #number of samples captured by the rule
                 n_samples_remain = y_remain.size
-                n_samples_other = n_samples_remain - n_samples_rule
+                n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                 # Minimum support check
                 if (n_samples_rule/n_samples) >= min_support and (n_samples_rule/n_samples) > 0:
-                    average_outcome_rule = np.average(y_remain[rule_capt_indices])
+                    average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
                     average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
                     if average_outcome_rule < 0.5:
                         pred = 0
