@@ -72,3 +72,6 @@ def rule_indices(a_rule, X):
             rule_capts = np.logical_and(rule_capts, np.logical_not(X[:,(-a_one_rule)-1]))
 
     return np.where(rule_capts == 1)
+
+ 
+ 
