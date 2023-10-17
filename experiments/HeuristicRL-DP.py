@@ -16,7 +16,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
         self.status = 3
         
         #For (epsilon, delta)-DP
-        self.epsilon = epsilon
+        self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         
 

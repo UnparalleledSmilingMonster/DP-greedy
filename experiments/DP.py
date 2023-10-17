@@ -23,8 +23,50 @@ def exponential(epsilon, sensitivity, utility):
     
     return np.random.choice(np.arange(0,n), size=1, p=None)
  	
+
+def Q_roots(beta):
+    """
+    Returns the roots of polynomial Q(Y) = - beta Y**2 + (1-beta)Y - 1  when they exist.
+    """
+    beta_1 = 3-2*np.sqrt(2)
+    beta_2 = 3+2*np.sqrt(2)
+    
+    if beta > beta_1 and beta < beta_2 : 
+        raise Exception("Q has no real roots for these values of beta.")
+    
+    if beta == beta_1 or beta == beta_2:
+        raise Exception("Q admits a single root in that case, please pick another value for beta")
+    
+    y_1 = (1-beta + np.sqrt((1-beta)**2 -4*beta))/(2*beta)
+    y_2 = (1-beta - np.sqrt((1-beta)**2 -4*beta))/(2*beta)
+    
+    return y_1, y_2
  	
  	
+def local_sensitivity_gini(x):
+    """
+    Returns the local sensitivity for the gini impurity evaluated in x>0, x integer.
+    """
+    assert(x>0)         #x positive
+    assert(int(x)==x)   #x integer
+    return 1 - (x/(x+1))**2 - (1/(x+1))**2
+
+
+def smooth_sensitivity_gini_function(x,beta,t):
+    """
+    Returns the smooth sensitivity for the gini impurity evaluated in t >0 integer. Xi function in week6.tex
+    
+    """
+    assert(beta>0)
+    assert(x>0)         #x positive
+    assert(int(x)==x)   #x integer
+    assert(t>0)         #x positive
+    assert(int(t)==t)   #x integer
+        
+    return np.exp(-beta*t) * local_sensitivity_gini(max(1,x -t))
+    
+     
+
 print(exponential(1, 1, [1,2,3] ))
 
 print(laplace(1,1,10))
