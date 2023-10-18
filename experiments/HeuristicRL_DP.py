@@ -1,3 +1,5 @@
+import DP as dp
+
 import numpy as np
 from corels import RuleList, CorelsClassifier
 from utils_greedy import *
@@ -18,9 +20,9 @@ class DPGreedyRLClassifier(CorelsClassifier):
         #For (epsilon, delta)-DP
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
+        self.beta = self.epsilon/ self.max_length
         
-
-
+        
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
         if not (memory_limit is None):
             import os, psutil
@@ -41,7 +43,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
         cards = [] # will contain the list of per-class training examples cardinalities for each rule
 
         n_samples = y.size
-        if (self.delta is None) : self.delta = 1 / n_samples**2 	#set delta to polynomial if not set
+        if (self.delta is None) : self.delta =0  #1 / n_samples**2 	#set delta to polynomial if not set
         print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
         n_features = X.shape[1]
 
@@ -65,9 +67,11 @@ class DPGreedyRLClassifier(CorelsClassifier):
             
             
             current_rules = list_of_rules.copy()
-            info_rule = np.zeros((len(current_rules),3))
+            info_rule = np.zeros((len(current_rules),2))
+            capt_indices_rules = [[] for i in range(len(current_rules))]
             utility = np.zeros(len(current_rules))
             idx = 0
+            sensitivity = dp.smooth_sensitivity_gini(len(X_remain),self.beta, min_supp = 1) 
             for i in range(len(current_rules)): # uses a copy of the full version as is before iterating as the list is then modified during iterations
                 # Check memory limit
                 a_rule = current_rules[i]
@@ -104,9 +108,10 @@ class DPGreedyRLClassifier(CorelsClassifier):
                         list_of_rules.remove(a_rule)
                         
                     else :
-                        info_rule[idx]= [rule_capt_indices, i, pred] #keep track of captured indexes and rule 
+                        info_rule[idx]= [i, pred] #keep track of captured indexes and rule 
+                        capt_indices_rules[idx] = rule_capt_indices
                         utility[idx] = rule_gini
-                        idx +=1  #only increment if rule is kept for the 'Rashomon' set
+                        idx +=1  #only increment if rule is kept for the 'Rashomon'-like set
                 else:
                     list_of_rules.remove(a_rule) # the rule won't satisfy min. support anymore
                 
@@ -115,13 +120,14 @@ class DPGreedyRLClassifier(CorelsClassifier):
             info_rule = info_rule[:idx+1] #truncate to last element idx
             utility = utility[:idx+1]
             
-            if len(utility) == 0: 
+            if idx  == 0:  #means that utility is empty
                 stop = True 
                 
-            sensitivity = 1 #TODO : find the right sensitivity
             else:
-                best_idx = DP.exponential(self.epsilon, sensitivity, utility)
-                best_rule_capt_indices,best_rule, best_pred  = current_rules[info_rule[best_idx]]
+                print("Number of rules to sample from : ", len(utility))
+                best_idx = dp.exponential(self.epsilon, sensitivity, utility)[0]
+                best_rule, best_pred  = current_rules[int(info_rule[best_idx][0])], info_rule[best_idx][1]
+                best_rule_capt_indices = capt_indices_rules[best_idx]
                 
                 rules.append(best_rule)
                 preds.append(best_pred)
@@ -194,7 +200,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
             self.status = -2
 
     def __str__(self):
-        s = "GreedyRLClassifier (" + str(self.get_params()) + ")"
+        s = "DPGreedyRLClassifier (" + str(self.get_params()) + ")"
 
         if hasattr(self, "rl_"):
             s += "\n" + self.rl_.__str__()

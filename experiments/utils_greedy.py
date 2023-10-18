@@ -61,10 +61,11 @@ def mine_rules_combinations(X, max_card, min_support, allow_negations, features,
     return list_of_rules, tot_rules
 
 def rule_indices(a_rule, X):
-	"""
-	Returns an array of indexes that represent the samples captured by a_rule.
-	"""
+    """
+    Returns an array of indexes that represent the samples captured by a_rule.
+    """
     rule_capts = np.ones(X.shape[0])
+    
     for a_one_rule in a_rule:
         if a_one_rule > 0:
             rule_capts = np.logical_and(rule_capts, X[:,a_one_rule-1])
