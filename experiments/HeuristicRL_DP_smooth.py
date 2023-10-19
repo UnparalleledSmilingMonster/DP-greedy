@@ -7,7 +7,7 @@ from utils_greedy import *
 """
 Subclass of the CORELSClassifier class, training a rule list using a greedy method.
 """
-class DPGreedyRLClassifier(CorelsClassifier):
+class DpSmoothGreedyRLClassifier(CorelsClassifier):
 
     def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, verbosity=[]):
         self.max_card = max_card
@@ -16,13 +16,11 @@ class DPGreedyRLClassifier(CorelsClassifier):
         self.allow_negations = allow_negations
         self.verbosity = verbosity
         self.status = 3
-        
         #For (epsilon, delta)-DP
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.beta = self.epsilon/ self.max_length
-        
-        
+
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
         if not (memory_limit is None):
             import os, psutil
@@ -37,14 +35,15 @@ class DPGreedyRLClassifier(CorelsClassifier):
         max_length = self.max_length
         allow_negations = self.allow_negations
         verbosity = self.verbosity
+       
+        if (self.delta is None) : self.delta =0  #1 / n_samples**2 	#set delta to polynomial if not set
+        print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
 
         rules = [] # will contain the list of lists of antecedents for each rule
         preds = [] # will contain the list of predictions for each rule
         cards = [] # will contain the list of per-class training examples cardinalities for each rule
 
         n_samples = y.size
-        if (self.delta is None) : self.delta =0  #1 / n_samples**2 	#set delta to polynomial if not set
-        print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
         n_features = X.shape[1]
 
         stop = False # early stopping if no more rule can be found that satisfies the min. support constraint before the max. depth is reached
@@ -58,23 +57,19 @@ class DPGreedyRLClassifier(CorelsClassifier):
         while (len(rules) < max_length) and (not stop) and (self.status == 0):
             # Greedy choice for next rule
             average_outcome_remaining = np.average(y_remain)
-            init_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added
+            best_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added
             #print("Initial gini: ", best_gini)
             best_capt_gini = (1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2) # only used to compare in case of equality
             best_rule = -1
             best_pred = -1
             best_rule_capt_indices = -1
             
-            
             current_rules = list_of_rules.copy()
-            info_rule = np.zeros((len(current_rules),2))
-            capt_indices_rules = [[] for i in range(len(current_rules))]
-            utility = np.zeros(len(current_rules))
-            idx = 0
-            sensitivity = 0.5 #dp.smooth_sensitivity_gini(len(X_remain),self.beta, min_supp = 1) 
-            for i in range(len(current_rules)): # uses a copy of the full version as is before iterating as the list is then modified during iterations
-                # Check memory limit
+            smooth_sensitivity = dp.smooth_sensitivity_gini(len(X_remain),self.beta, min_supp = 1) 
+            
+            for i in range(len(current_rules)): # uses a copy of the full version as is before iterating as the list is then modified during iterations      
                 a_rule = current_rules[i]
+                # Check memory limit
                 if not (memory_limit is None):
                     mem_used = (psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
                     if mem_used > memory_limit:
@@ -103,32 +98,23 @@ class DPGreedyRLClassifier(CorelsClassifier):
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                     other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
                     rule_gini = capt_gini + other_gini
+                    rule_gini += dp.cauchy_smooth(self.epsilon, len(X_remain), 2) #noisy version
                     #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
-                    if rule_gini > init_gini: #if the rule does not better the model drop it
-                        list_of_rules.remove(a_rule)
-                        
-                    else :
-                        info_rule[idx]= [i, pred] #keep track of captured indexes and rule 
-                        capt_indices_rules[idx] = rule_capt_indices
-                        utility[idx] = rule_gini
-                        idx +=1  #only increment if rule is kept for the 'Rashomon'-like set
+                    if (rule_gini < best_gini) or \
+                        ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
+                        #print("-> new gini: ", rule_gini)
+                        #best_different_from_default = is_different_from_default # not used for now
+                        best_gini = rule_gini
+                        best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
+                        best_rule = a_rule
+                        best_pred = pred
+                        best_rule_capt_indices = rule_capt_indices
                 else:
                     list_of_rules.remove(a_rule) # the rule won't satisfy min. support anymore
-                
 
-                
-            info_rule = info_rule[:idx+1] #truncate to last element idx
-            utility = utility[:idx+1]
-            
-            if idx  == 0:  #means that utility is empty
+            if best_rule == -1: # no rule OK found
                 stop = True 
-                
             else:
-                print("Number of rules to sample from : ", len(utility))
-                best_idx = dp.exponential(self.epsilon, sensitivity, utility)[0]
-                best_rule, best_pred  = current_rules[int(info_rule[best_idx][0])], info_rule[best_idx][1]
-                best_rule_capt_indices = capt_indices_rules[best_idx]
-                
                 rules.append(best_rule)
                 preds.append(best_pred)
 
@@ -200,7 +186,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
             self.status = -2
 
     def __str__(self):
-        s = "DPGreedyRLClassifier (" + str(self.get_params()) + ")"
+        s = "DP with Smooth Sensitivity GreedyRLClassifier (" + str(self.get_params()) + ")"
 
         if hasattr(self, "rl_"):
             s += "\n" + self.rl_.__str__()

@@ -1,9 +1,41 @@
 import numpy as np
+from scipy import integrate, optimize
+
 
 beta_1 = 3-2*np.sqrt(2)
 beta_2 = 3+2*np.sqrt(2)
+
+def generalized_cauchy_pdf(x,a):
+    return 1/(1+np.abs(x)**a)
     
-  
+
+def cauchy_smooth(epsilon, x, gamma = 2):
+    """
+    Uses universe transform sampling method to sample the element from the Cauchy like distribution.
+    """
+
+    beta = epsilon/(2*(gamma+1))
+    
+    valid = False 
+    while not valid: #in the very rare cases where the sampled element is too extreme, sample again (very meager bias)
+        u = np.random.uniform(0,1)
+        #print("Sampled probability:",u)            
+
+        normalization = integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,np.inf)[0]
+        #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,np.inf)[0]/normalization) #this should be 0.5
+        #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,1e4)[0]/normalization)
+        
+        equation = lambda z: integrate.quad(lambda x :generalized_cauchy_pdf(x,gamma)/normalization, 0, z)[0] - u
+        z_solution = optimize.root_scalar(equation, bracket=[0, 1e4]) #Experimentally 1e4 is the highest value we can go up to before 
+                                                                       # the integral computation becomes wrong        
+
+        if z_solution.converged:
+            valid = True
+            eta = ( 1 if np.random.uniform() < 0.5 else -1) * z_solution.root
+        else:
+            valid=False
+    
+    return smooth_sensitivity_gini(x, beta)/beta * eta
     
 def laplace(epsilon, sensitivity, n): 
     """
@@ -26,8 +58,6 @@ def exponential(epsilon, sensitivity, utility):
     probs = np.exp(epsilon* utility/(2*sensitivity) )
     maxi = max(probs)
     probs /= maxi
-    print(probs)
-    print(np.sum(probs))
     probs/= np.sum(probs)
     
     return np.random.choice(np.arange(0,n), size=1, p=None)
@@ -79,7 +109,8 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
     """
     Returns the smooth sensitivity for a given x>0.
     """
-   
+    print("x:", x)
+    print("Beta:",beta)
     if beta == beta_1 or beta == beta_2:
         raise Exception("Q admits a single root in that case, please pick another value for beta")
         
@@ -88,6 +119,7 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
         
         t1 = x - y1
         t2 = x - y2
+        print(t2)
         xi_t2m = smooth_sensitivity_gini_function(x,beta, np.floor(t2))
         xi_t2p = smooth_sensitivity_gini_function(x,beta, np.ceil(t2))
         

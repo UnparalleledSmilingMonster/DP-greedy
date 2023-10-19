@@ -1,5 +1,6 @@
 from corels import load_from_csv, RuleList, CorelsClassifier
 from HeuristicRL_DP import DPGreedyRLClassifier
+from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 
 dataset = "compas"
@@ -13,7 +14,7 @@ X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
 
 if not compute_exact:
     # Greedy
-    greedy_rl = DPGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = 1)
+    greedy_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = 1)
     greedy_rl.fit(X, y, features=features, prediction_name=prediction)
     my_rl = greedy_rl
 else:
