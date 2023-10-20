@@ -19,7 +19,9 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         #For (epsilon, delta)-DP
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
-        self.beta = self.epsilon/ self.max_length
+        self.gamma = 2
+        self.beta = self.epsilon/(2*(self.gamma+1)* self.max_length)
+        
 
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
         if not (memory_limit is None):
@@ -55,6 +57,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         list_of_rules, tot_rules = mine_rules_combinations(X, max_card, min_support, allow_negations, features, verbosity)
 
         while (len(rules) < max_length) and (not stop) and (self.status == 0):
+            print("Computing rule number ",len(rules))
             # Greedy choice for next rule
             average_outcome_remaining = np.average(y_remain)
             best_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added
@@ -89,16 +92,17 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                 # Minimum support check
                 if (n_samples_rule/n_samples) >= min_support and (n_samples_rule/n_samples) > 0:
                     average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
-                    average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
-                    if average_outcome_rule < 0.5:
-                        pred = 0
-                    else:
-                        pred = 1
+                    pred = 0 if average_outcome_rule < 0.5 else 1
+                    if len(np.delete(y_remain, rule_capt_indices)) == 0: #to avoid computing empty mean (numpy warning)
+                        other_gini =0
+                    else :                         
+                        average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
+                        other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
+                   
                     #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
-                    other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
                     rule_gini = capt_gini + other_gini
-                    rule_gini += dp.cauchy_smooth(self.epsilon, len(X_remain), 2) #noisy version
+                    rule_gini += dp.cauchy_smooth(self.beta, len(X_remain), self.gamma, smooth_sensitivity) #noisy version
                     #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
                     if (rule_gini < best_gini) or \
                         ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
