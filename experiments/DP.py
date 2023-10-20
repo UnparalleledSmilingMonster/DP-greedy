@@ -9,33 +9,44 @@ def generalized_cauchy_pdf(x,a):
     return 1/(1+np.abs(x)**a)
     
 
-def cauchy_smooth(epsilon, x, gamma = 2):
+def cauchy_smooth(beta, x, gamma, sensitivity):
     """
-    Uses universe transform sampling method to sample the element from the Cauchy like distribution.
+    Uses inverse transform sampling method to sample the element from the Cauchy like distribution.
+    Efficient to draw 1 sample but costly for lots of samples... The program should be enhanced here because it takes quite some time.
     """
-
-    beta = epsilon/(2*(gamma+1))
+    assert gamma>1
     
-    valid = False 
-    while not valid: #in the very rare cases where the sampled element is too extreme, sample again (very meager bias)
+    if gamma == 2: #we know a close form solution : arctan'(x) = 1/(1+x^2) and int[-inf, z ] 1/(1+x^2) dx = arctan(z) + pi/2
+                   # we add the normalization factor pi so that int[-inf, +inf ] 1/[pi*(1+x^2)] dx  = 1
+                   #solve for z : arctan(z)/ pi = u -1/2 ==> z = tan( pi *u - pi/2)
+                   # this is well defined because pi *u - pi/2 lies in [-pi/2, pi/2]
+    
         u = np.random.uniform(0,1)
-        #print("Sampled probability:",u)            
-
-        normalization = integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,np.inf)[0]
-        #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,np.inf)[0]/normalization) #this should be 0.5
-        #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,1e4)[0]/normalization)
-        
-        equation = lambda z: integrate.quad(lambda x :generalized_cauchy_pdf(x,gamma)/normalization, 0, z)[0] - u
-        z_solution = optimize.root_scalar(equation, bracket=[0, 1e4]) #Experimentally 1e4 is the highest value we can go up to before 
-                                                                       # the integral computation becomes wrong        
-
-        if z_solution.converged:
-            valid = True
-            eta = ( 1 if np.random.uniform() < 0.5 else -1) * z_solution.root
-        else:
-            valid=False
+        eta = np.tan(np.pi *u - np.pi/2)       
     
-    return smooth_sensitivity_gini(x, beta)/beta * eta
+    else : 
+        valid = False 
+        while not valid: #in the very rare cases where the sampled element is too extreme, sample again (very meager bias)
+            u = np.random.uniform(0,1)
+            #print("Sampled probability:",u)            
+
+            normalization = integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,np.inf)[0]
+            #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,np.inf)[0]/normalization) #this should be 0.5
+            #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,1e4)[0]/normalization)
+            
+            equation = lambda z: integrate.quad(lambda x :generalized_cauchy_pdf(x,gamma)/normalization, 0, z)[0] - u
+            z_solution = optimize.root_scalar(equation, bracket=[0, 1e4]) #Experimentally 1e4 is the highest value we can go up to before 
+                                                                           # the integral computation becomes wrong        
+
+            if z_solution.converged:
+                valid = True
+                eta = ( 1 if np.random.uniform() < 0.5 else -1) * z_solution.root
+            else:
+                valid=False
+    
+    #print(sensitivity/beta * eta)
+    
+    return sensitivity/beta * eta
     
 def laplace(epsilon, sensitivity, n): 
     """
@@ -109,8 +120,6 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
     """
     Returns the smooth sensitivity for a given x>0.
     """
-    print("x:", x)
-    print("Beta:",beta)
     if beta == beta_1 or beta == beta_2:
         raise Exception("Q admits a single root in that case, please pick another value for beta")
         
@@ -119,7 +128,6 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
         
         t1 = x - y1
         t2 = x - y2
-        print(t2)
         xi_t2m = smooth_sensitivity_gini_function(x,beta, np.floor(t2))
         xi_t2p = smooth_sensitivity_gini_function(x,beta, np.ceil(t2))
         
