@@ -76,11 +76,12 @@ class GreedyRLClassifier(CorelsClassifier):
                 # Minimum support check
                 if (n_samples_rule/n_samples) >= min_support and (n_samples_rule/n_samples) > 0:
                     average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
-                    average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
-                    if average_outcome_rule < 0.5:
-                        pred = 0
-                    else:
-                        pred = 1
+                    pred = 0 if average_outcome_rule < 0.5 else 1
+                    if len(np.delete(y_remain, rule_capt_indices)) == 0: #to avoid computing empty mean (numpy warning)
+                        other_gini =0
+                    else :                         
+                        average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
+                        other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
                     #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                     other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)

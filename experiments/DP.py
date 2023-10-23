@@ -32,10 +32,10 @@ def cauchy_smooth(beta, x, gamma, sensitivity):
 
             normalization = integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,np.inf)[0]
             #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,np.inf)[0]/normalization) #this should be 0.5
-            #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,1e4)[0]/normalization)
+            #print(integrate.quad(lambda x : generalized_cauchy_pdf(x,gamma),0,1e5)[0]/normalization)
             
             equation = lambda z: integrate.quad(lambda x :generalized_cauchy_pdf(x,gamma)/normalization, 0, z)[0] - u
-            z_solution = optimize.root_scalar(equation, bracket=[0, 1e4]) #Experimentally 1e4 is the highest value we can go up to before 
+            z_solution = optimize.root_scalar(equation, bracket=[0, 1e5]) #Experimentally 1e5 is the highest value we can go up to before 
                                                                            # the integral computation becomes wrong        
 
             if z_solution.converged:
@@ -45,6 +45,8 @@ def cauchy_smooth(beta, x, gamma, sensitivity):
                 valid=False
     
     #print(sensitivity/beta * eta)
+    
+    if sensitivity/beta * eta >1 : print(sensitivity/beta * eta )
     
     return sensitivity/beta * eta
     
@@ -67,8 +69,6 @@ def exponential(epsilon, sensitivity, utility):
     if not isinstance(utility, np.ndarray) : utility = np.array(utility)
     utility = np.float128(utility)  #to prevent overflows
     probs = np.exp(epsilon* utility/(2*sensitivity) )
-    maxi = max(probs)
-    probs /= maxi
     probs/= np.sum(probs)
     
     return np.random.choice(np.arange(0,n), size=1, p=None)
@@ -110,10 +110,10 @@ def smooth_sensitivity_gini_function(x,beta,t,min_supp=1):
     assert beta>0
     assert x>0, "x should be positive"         
     assert int(x)==x, "x should be an integer"  
-    assert t>=0, "t should be positive"  
+    assert t>=0, "t should be positive: {0}".format(t)  
     assert int(t)==t, "t should be an integer" 
         
-    return np.exp(-beta*t) * local_sensitivity_gini(max(1,x -t))
+    return np.exp(-beta*t) * local_sensitivity_gini(max(min_supp,x -t))
     
 
 def smooth_sensitivity_gini(x, beta, min_supp = 1):
@@ -122,23 +122,34 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
     """
     if beta == beta_1 or beta == beta_2:
         raise Exception("Q admits a single root in that case, please pick another value for beta")
+    
+    default = smooth_sensitivity_gini_function(x,beta, 0, min_supp)
         
-    if beta < beta_1 :
+    if beta < beta_1 or beta > beta_2:
         y1,y2 = Q_roots(beta)
         
         t1 = x - y1
         t2 = x - y2
-        xi_t2m = smooth_sensitivity_gini_function(x,beta, np.floor(t2))
-        xi_t2p = smooth_sensitivity_gini_function(x,beta, np.ceil(t2))
+        upper_b = x - min_supp  #>0 
         
-        if t1 < 0 :  
-            return max(xi_t2m, xi_t2p)
+        if t2 < x - min_supp :
+            xi_t2m = smooth_sensitivity_gini_function(x,beta, np.floor(t2))
+            xi_t2p = smooth_sensitivity_gini_function(x,beta, np.ceil(t2))
+            if t1<0:            
+                return max(xi_t2m, xi_t2p)
+            
+            else :            
+                return max(default, xi_t2m, xi_t2p)   
         
-        else:
-            return max(smooth_sensitivity_gini_function(x,beta, 0), xi_t2m, xi_t2p)   
+        else :  #t2 >= x - min_supp
+            if t1 < 0 :
+                return smooth_sensitivity_gini_function(x,beta, upper_b) 
+            
+            else : 
+                return max(default, smooth_sensitivity_gini_function(x,beta, upper_b) )   
+                
     
-    else :
-        return smooth_sensitivity_gini_function(x,beta, 0) #Xi(0)
+    return default
      
     
 """

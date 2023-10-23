@@ -5,7 +5,7 @@ from corels import RuleList, CorelsClassifier
 from utils_greedy import *
 
 """
-Subclass of the CORELSClassifier class, training a rule list using a greedy method.
+Subclass of the CORELSClassifier class, training a rule list using a greedy method with DP with exponential mechanism.
 """
 class DPGreedyRLClassifier(CorelsClassifier):
 
@@ -120,17 +120,18 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 
 
                 
-            info_rule = info_rule[:idx+1] #truncate to last element idx
-            utility = utility[:idx+1]
+            info_rule = info_rule[:idx]
+            utility = utility[:idx] #truncate to last element idx
             
             if idx  == 0:  #means that utility is empty
                 stop = True 
                 
             else:
                 print("Number of rules to sample from : ", len(utility))
-                best_idx = dp.exponential(self.epsilon, sensitivity, utility)[0]
+                best_idx = dp.exponential(self.beta, sensitivity, 1-utility)[0]
                 best_rule, best_pred  = current_rules[int(info_rule[best_idx][0])], info_rule[best_idx][1]
-                best_rule_capt_indices = capt_indices_rules[best_idx]
+                best_rule_capt_indices = capt_indices_rules[best_idx][0]
+
                 
                 rules.append(best_rule)
                 preds.append(best_pred)
@@ -146,6 +147,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 X_remain = np.delete(X_remain, best_rule_capt_indices, axis=0)
                 y_remain = np.delete(y_remain, best_rule_capt_indices)
                 list_of_rules.remove(best_rule)
+                if(len(X_remain) < min_support) : stop = True
             
         # default rule
         if y_remain.size > 0:

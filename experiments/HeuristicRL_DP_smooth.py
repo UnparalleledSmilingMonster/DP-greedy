@@ -5,8 +5,7 @@ from corels import RuleList, CorelsClassifier
 from utils_greedy import *
 
 """
-Subclass of the CORELSClassifier class, training a rule list using a greedy method.
-"""
+Subclass of the CORELSClassifier class, training a rule list using a greedy method with DP with noisy max report (cauchy noise).
 class DpSmoothGreedyRLClassifier(CorelsClassifier):
 
     def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, verbosity=[]):
@@ -37,6 +36,8 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         max_length = self.max_length
         allow_negations = self.allow_negations
         verbosity = self.verbosity
+        
+
        
         if (self.delta is None) : self.delta =0  #1 / n_samples**2 	#set delta to polynomial if not set
         print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
@@ -47,7 +48,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
 
         n_samples = y.size
         n_features = X.shape[1]
-
+        min_supp_N = np.floor(self.min_support * n_samples)
         stop = False # early stopping if no more rule can be found that satisfies the min. support constraint before the max. depth is reached
 
         X_remain = np.copy(X)
@@ -68,7 +69,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
             best_rule_capt_indices = -1
             
             current_rules = list_of_rules.copy()
-            smooth_sensitivity = dp.smooth_sensitivity_gini(len(X_remain),self.beta, min_supp = 1) 
+            smooth_sensitivity = dp.smooth_sensitivity_gini(len(X_remain),self.beta, min_supp = min_supp_N) 
             
             for i in range(len(current_rules)): # uses a copy of the full version as is before iterating as the list is then modified during iterations      
                 a_rule = current_rules[i]
@@ -101,7 +102,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                    
                     #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
-                    rule_gini = capt_gini + other_gini
+                    rule_gini = capt_gini #+ other_gini
                     rule_gini += dp.cauchy_smooth(self.beta, len(X_remain), self.gamma, smooth_sensitivity) #noisy version
                     #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
                     if (rule_gini < best_gini) or \
@@ -133,6 +134,8 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                 X_remain = np.delete(X_remain, best_rule_capt_indices, axis=0)
                 y_remain = np.delete(y_remain, best_rule_capt_indices)
                 list_of_rules.remove(best_rule)
+                
+                if(len(X_remain) < min_supp_N) : stop = True
             
         # default rule
         if y_remain.size > 0:
