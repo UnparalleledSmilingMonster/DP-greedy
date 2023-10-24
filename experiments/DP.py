@@ -149,7 +149,16 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
                 
     
     return default
-     
+
+
+def clean_dataset(X,features, biases):
+    """Returns a dataset deprived from the columns we do not want the classifier rules to be based upon"""
+    rmv = np.zeros(len(features), dtype=int)
+    for bias in biases :
+        rmv += np.fromiter(map(lambda x: 1 if x.startswith(bias) else 0, features), dtype=int)
+    
+    rmv_idx = np.where(rmv > 0)[0]  #should be == 1 but safeguard is to take >= 1 
+    return np.delete(X, rmv_idx, axis = 1), [feature for (idx,feature) in enumerate(features) if idx not in rmv_idx]
     
 """
 print(exponential(1, 1, [1,2,3] ))
