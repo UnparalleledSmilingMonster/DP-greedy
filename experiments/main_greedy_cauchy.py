@@ -13,15 +13,29 @@ compute_exact = False
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
 
-print(X.shape)
 
-N_runs = 100
+
+def clean_dataset(X,features, biases):
+    """Returns a dataset deprived from the columns we do not want the classifier rules to be based upon"""
+    rmv = np.zeros(len(features), dtype=int)
+    for bias in biases :
+        rmv += np.fromiter(map(lambda x: 1 if x.startswith(bias) else 0, features), dtype=int)
+    
+    rmv_idx = np.where(rmv > 0)[0]  #should be == 1 but safeguard is to take >= 1 
+    return np.delete(X, rmv_idx, axis = 1), [feature for (idx,feature) in enumerate(features) if idx not in rmv_idx]
+
+    
+X_unbias,features_unbias = clean_dataset(X,features, ["Race", "Age", "Gender"])
+print(list(set(features)-set(features_unbias)))
+
+
+N_runs = 10
 res = np.zeros(N_runs)
 for i in range(N_runs):
     if not compute_exact:
         # Greedy
         greedy_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon)
-        greedy_rl.fit(X, y, features=features, prediction_name=prediction)
+        greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)
         my_rl = greedy_rl
     else:
         # CORELS
@@ -29,11 +43,11 @@ for i in range(N_runs):
         corels_rl.fit(X, y, features=features, prediction_name=prediction)
         my_rl = corels_rl
     
-    res[i]= np.average(my_rl.predict(X) == y)
+    res[i]= np.average(my_rl.predict(X_unbias) == y)
     
 
 greedy_rl = GreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
-greedy_rl.fit(X, y, features=features, prediction_name=prediction)
+greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)
 my_rl = greedy_rl
 
 
@@ -45,7 +59,7 @@ f.write("Variance of accuracy: {0}\n".format(np.var(res)))
 f.write("Min accuracy: {0}\n".format(np.min(res)))
 f.write("Max accuracy: {0}\n".format(np.max(res)))
 f.write("####################\n")
-f.write("Vanilla Greedy RL : acc={0}\n".format(np.average(my_rl.predict(X) == y)))
+f.write("Vanilla Greedy RL : acc={0}\n".format(np.average(my_rl.predict(X_unbias) == y)))
 f.close()
 
 
