@@ -44,9 +44,8 @@ def cauchy_smooth(beta, x, gamma, sensitivity):
             else:
                 valid=False
     
-    #print(sensitivity/beta * eta)
-    
-    if sensitivity/beta * eta >1 : print(sensitivity/beta * eta )
+   
+    #if sensitivity/beta * eta >1 : print(sensitivity/beta * eta )
     
     return sensitivity/beta * eta
     

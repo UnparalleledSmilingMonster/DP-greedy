@@ -5,17 +5,17 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 
 dataset = "compas"
-min_support = 0.1
-max_length =5
+min_support = 0.05
+max_length = 5
 max_card = 2
-epsilon = 0.1
+epsilon = 1
 compute_exact = False
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
 
 print(X.shape)
 
-N_runs = 5
+N_runs = 100
 res = np.zeros(N_runs)
 for i in range(N_runs):
     if not compute_exact:
@@ -49,15 +49,14 @@ f.write("Vanilla Greedy RL : acc={0}\n".format(np.average(my_rl.predict(X) == y)
 f.close()
 
 
-
-        
-     
 """
 print(my_rl)
 train_acc = np.average(my_rl.predict(X) == y)
 print("train_acc = ", train_acc)
 print("Search status = ", my_rl.get_status())
 """
+
+
 #for i in range(len(rules)):
 #    if i > 0:
 #        print("else ", end = '')

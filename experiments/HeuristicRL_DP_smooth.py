@@ -5,7 +5,8 @@ from corels import RuleList, CorelsClassifier
 from utils_greedy import *
 
 """
-Subclass of the CORELSClassifier class, training a rule list using a greedy method with DP with noisy max report (cauchy noise).
+Subclass of the CORELSClassifier class, training a rule list using a greedy method with DP with noisy max report (cauchy noise)."""
+
 class DpSmoothGreedyRLClassifier(CorelsClassifier):
 
     def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, verbosity=[]):
