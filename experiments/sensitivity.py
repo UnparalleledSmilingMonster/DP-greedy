@@ -78,7 +78,7 @@ def laplace_glb_vs_smooth():
             noise_lap[i] += dp.laplace(epsilon, sensi_lap, 1)[0]
     noise_lap/= avg
     plt.plot(x, noise_lap, label="Laplace Global Noise")
-    print("Laplace Noise : Var = {0}".format(np.var(noise_lap)))
+    print("Laplace Global Noise : Var = {0}".format(np.var(noise_lap)))
     
     for min_supp in min_supps:
         noise_lap_smooth = np.zeros(N)
@@ -93,7 +93,7 @@ def laplace_glb_vs_smooth():
         
         noise_lap_smooth/=avg
         plt.plot(x[min_idx:], noise_lap_smooth[min_idx:], label="Laplace Smooth Noise "+ r'$\Lambda ={0}$'.format(min_supp), linewidth = 2)
-        print("Laplace Global Noise : min_supp ={0} : ".format(min_supp) + "Var = {0}".format(np.var(noise_lap_smooth)))
+        print("Laplace Smooth Noise : min_supp ={0} : ".format(min_supp) + "Var = {0}".format(np.var(noise_lap_smooth)))
         
         
         
