@@ -5,6 +5,12 @@ from scipy import integrate, optimize
 beta_1 = 3-2*np.sqrt(2)
 beta_2 = 3+2*np.sqrt(2)
 
+
+def laplace_smooth(epsilon, x, sensitivity):
+    """Returns laplace noise using smooth sensitivity : guarantee = (epsilon, delta) -DP with beta = epsilon /(2*ln(2/delta)) """
+    
+    return 2 * sensitivity /epsilon * np.random.laplace(scale = 1, size = 1)[0]
+
 def generalized_cauchy_pdf(x,a):
     return 1/(1+np.abs(x)**a)
     

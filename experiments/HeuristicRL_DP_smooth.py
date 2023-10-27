@@ -9,7 +9,7 @@ Subclass of the CORELSClassifier class, training a rule list using a greedy meth
 
 class DpSmoothGreedyRLClassifier(CorelsClassifier):
 
-    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, verbosity=[]):
+    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, noise = "Cauchy", verbosity=[]):
         self.max_card = max_card
         self.min_support = min_support
         self.max_length = max_length
@@ -19,8 +19,14 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         #For (epsilon, delta)-DP
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
-        self.gamma = 2
-        self.beta = self.epsilon/(2*(self.gamma+1)* self.max_length)
+        self.noise = noise
+        self.budget_per_node = self.epsilon / self.max_length
+        
+        if self.noise == "Cauchy":
+            self.gamma = 2
+            self.beta = self.budget_per_node/(2*(self.gamma+1))
+            self.delta =0  #pure DP with Cauchy Noise
+            
         
 
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
@@ -38,10 +44,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         allow_negations = self.allow_negations
         verbosity = self.verbosity
         
-
        
-        if (self.delta is None) : self.delta =0  #1 / n_samples**2 	#set delta to polynomial if not set
-        print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
 
         rules = [] # will contain the list of lists of antecedents for each rule
         preds = [] # will contain the list of predictions for each rule
@@ -50,6 +53,16 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         n_samples = y.size
         n_features = X.shape[1]
         min_supp_N = np.floor(self.min_support * n_samples)
+        
+        if self.noise == "Laplace":
+            if (self.delta is None) : self.delta =1 / n_samples**2 	#set delta to polynomial if not set
+            self.beta = self.epsilon/(2*np.log(2/self.delta))
+            
+            
+        print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
+        
+        
+        
         stop = False # early stopping if no more rule can be found that satisfies the min. support constraint before the max. depth is reached
 
         X_remain = np.copy(X)
@@ -104,7 +117,10 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                     #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                     rule_gini = capt_gini #+ other_gini
-                    rule_gini += dp.cauchy_smooth(self.beta, len(X_remain), self.gamma, smooth_sensitivity) #noisy version
+                    if self.noise == "Cauchy":
+                        rule_gini += dp.cauchy_smooth(self.beta, len(X_remain), self.gamma, smooth_sensitivity) #noisy version
+                    else : 
+                        rule_gini += dp.laplace_smooth(self.budget_per_node, len(X_remain), smooth_sensitivity) #noisy version
                     #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
                     if (rule_gini < best_gini) or \
                         ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):

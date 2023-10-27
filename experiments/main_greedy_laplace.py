@@ -5,12 +5,11 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-
 dataset = "compas"
 min_support = 0.05
 max_length = 5
 max_card = 2
-epsilon = 1
+epsilon = 10
 compute_exact = False
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
@@ -19,12 +18,12 @@ X_unbias,features_unbias = dp.clean_dataset(X,features, ["Race", "Age", "Gender"
 print(list(set(features)-set(features_unbias)))
 
 
-N_runs = 1
+N_runs = 10
 res = np.zeros(N_runs)
 for i in range(N_runs):
     if not compute_exact:
         # Greedy
-        greedy_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Cauchy")
+        greedy_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace")
         greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)
         my_rl = greedy_rl
     else:
@@ -35,7 +34,6 @@ for i in range(N_runs):
     
     res[i]= np.average(my_rl.predict(X_unbias) == y)
     
-print(my_rl)
 
 
 greedy_rl = GreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
@@ -44,8 +42,9 @@ my_rl = greedy_rl
 
 
 
-f = open("DP_results/cauchy_smooth.txt", "a")
-f.write("\nCauchy Smooth DP : epsilon={0}, max_length={1}, max_card={2}, min_supp={3}\n".format(epsilon, max_length, max_card, min_support))
+f = open("DP_results/laplace_smooth.txt", "a")
+f.write("\nDataset used : {0}\n".format(dataset))
+f.write("Laplace Smooth DP : epsilon={0}, delta={1}, max_length={2}, max_card={3}, min_supp={4}\n".format(epsilon, "1/N^2" ,max_length, max_card, min_support))
 f.write("Number of runs: {0}\n".format(N_runs))
 f.write("Average accuracy: {0}\n".format(np.mean(res)))
 f.write("Variance of accuracy: {0}\n".format(np.var(res)))
