@@ -24,7 +24,7 @@ verbosity=[]
 t = PrettyTable(['dataset', 'Mechanism', epsilon_letter, delta_letter, lambda_letter, 'C_max', 'N', 'Runs', 'Avg. Time(s)', 'Accuracy'])
 
 max_card = 2
-epsilon = 1
+epsilons = [0.1, 1 , 10]
 llambda = 0.05
 max_length = 5
 
@@ -49,7 +49,7 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Exponent
             N = len(X)
             
             
-            method_bar = progress.add_task("[cyan]Method...", total=len(methods)+1)
+            method_bar = progress.add_task("[cyan]Method...", total=len(methods)*len(epsilons)+1)
             progress.update(method_bar, description = "[cyan]Method « GreedyRL »")
             start= time.time()
             #First compute the baseline algorithm (Greedy -Tree)
@@ -63,29 +63,31 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Exponent
             for method in methods:
                 progress.update(method_bar, description = "[cyan]Method « {0} »".format(method))
                 
-                if method.startswith("smooth"):
-                    start= time.time()
-                    noise = method.split("-")[1]
-                    res = np.zeros(runs)
-                    for i in range(runs):
-                        DP_rl = DpSmoothGreedyRLClassifier(min_support=llambda, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, delta =1/(N**2) , noise = noise) #delta is 0 for Cauchy noise
-                        DP_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)                    
-                        res[i]= np.average(DP_rl.predict(X_unbias) == y)
-                        
-                    t.add_row([dataset, method, epsilon, pretty_format(DP_rl.delta, 'e', 2), llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))])
-                    progress.update(method_bar, advance = 1)
-               
-               
-                else : #exponential mechanism, if you add other mechanisms, do more if/else on the value of method
-                    start= time.time()
-                    res = np.zeros(runs)
-                    for i in range(runs):
-                        DP_rl =  DPGreedyRLClassifier(min_support=llambda, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, delta = 0)
-                        DP_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)                    
-                        res[i]= np.average(DP_rl.predict(X_unbias) == y)
-                        
-                    t.add_row([dataset, method, epsilon, DP_rl.delta, llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))], divider = True)
-                    progress.update(method_bar, advance = 1)
+                for epsilon in epsilons :
+                
+                    if method.startswith("smooth"):
+                        start= time.time()
+                        noise = method.split("-")[1]
+                        res = np.zeros(runs)
+                        for i in range(runs):
+                            DP_rl = DpSmoothGreedyRLClassifier(min_support=llambda, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, delta =1/(N**2) , noise = noise) #delta is 0 for Cauchy noise
+                            DP_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)                    
+                            res[i]= np.average(DP_rl.predict(X_unbias) == y)
+                            
+                        t.add_row([dataset, method, epsilon, pretty_format(DP_rl.delta, 'e', 2), llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))])
+                        progress.update(method_bar, advance = 1)
+                   
+                   
+                    else : #exponential mechanism, if you add other mechanisms, do more if/else on the value of method
+                        start= time.time()
+                        res = np.zeros(runs)
+                        for i in range(runs):
+                            DP_rl =  DPGreedyRLClassifier(min_support=llambda, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, delta = 0)
+                            DP_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)                    
+                            res[i]= np.average(DP_rl.predict(X_unbias) == y)
+                            
+                        t.add_row([dataset, method, epsilon, DP_rl.delta, llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))], divider = True if epsilon == epsilons[-1] else False)
+                        progress.update(method_bar, advance = 1)
 
             progress.update(method_bar, description= "[green]All methods were benchmarked for {0}".format(dataset))
             
@@ -111,7 +113,7 @@ def pretty_format(number, mode = "f", num = 3):
     return form.format(number)
     
                          
-benchmark(runs = 1, datasets = ["compas", "adult"]) #, "australian-credit"])
+benchmark(runs = 3, datasets = ["compas", "adult"]) #, "australian-credit"])
 print(t)    
     
     
