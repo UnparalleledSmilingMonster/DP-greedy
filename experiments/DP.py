@@ -65,6 +65,18 @@ def laplace(epsilon, sensitivity, n):
     return np.random.laplace(scale = sensitivity/epsilon, size = n)
 
 
+def gaussian(epsilon, delta, sensitivity, n):
+    """
+    Implementation of the aussian mechanism.
+    Returns a noise vector following a Gaussian distribution : N( mu = 0, sigma = sensitivity/epsilon) of dim n.
+    """
+    assert sensitivity >=0
+    assert epsilon > 0 	
+    
+    c = np.sqrt(2 * np.log(1.25/delta)) +1e-5 #The DP holds if c² > 2 * np.log(1.25/delta) so we add a small term 
+    return np.random.normal(scale = c*sensitivity/epsilon, size = n)
+
+   
 def exponential(epsilon, sensitivity, utility):
     """
     Implementation of the Exponential Mechanism.
@@ -108,7 +120,7 @@ def smooth_sensitivity_gini_function(x,beta,t,min_supp=1):
     """
     Returns the smooth sensitivity for the gini impurity evaluated in t >0 integer. Xi function in week6.tex    
     """
-    #TODO: take into account minimum rule support lambda, add the param
+    
     assert min_supp >0
     assert int(min_supp) == min_supp
     
