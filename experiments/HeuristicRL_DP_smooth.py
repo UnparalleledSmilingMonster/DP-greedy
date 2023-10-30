@@ -59,7 +59,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
             self.beta = self.epsilon/(2*np.log(2/self.delta))
             
             
-        print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
+        #print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
         
         
         
@@ -72,7 +72,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         list_of_rules, tot_rules = mine_rules_combinations(X, max_card, min_support, allow_negations, features, verbosity)
 
         while (len(rules) < max_length) and (not stop) and (self.status == 0):
-            print("Computing rule number ",len(rules))
+            #print("Computing rule number ",len(rules))
             # Greedy choice for next rule
             average_outcome_remaining = np.average(y_remain)
             best_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added

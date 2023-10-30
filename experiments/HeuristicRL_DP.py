@@ -44,7 +44,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
 
         n_samples = y.size
         if (self.delta is None) : self.delta =0  #1 / n_samples**2 	#set delta to polynomial if not set
-        print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
+        #print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
         n_features = X.shape[1]
 
         stop = False # early stopping if no more rule can be found that satisfies the min. support constraint before the max. depth is reached
@@ -57,7 +57,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
 
         while (len(rules) < max_length) and (not stop) and (self.status == 0):
         
-            print("Computing rule number ",len(rules))
+            #print("Computing rule number ",len(rules))
             # Greedy choice for next rule
             average_outcome_remaining = np.average(y_remain)
             init_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added
@@ -127,7 +127,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 stop = True 
                 
             else:
-                print("Number of rules to sample from : ", len(utility))
+                #print("Number of rules to sample from : ", len(utility))
                 best_idx = dp.exponential(self.beta, sensitivity, 1-utility)[0]
                 best_rule, best_pred  = current_rules[int(info_rule[best_idx][0])], info_rule[best_idx][1]
                 best_rule_capt_indices = capt_indices_rules[best_idx][0]
