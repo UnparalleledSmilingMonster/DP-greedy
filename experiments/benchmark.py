@@ -2,6 +2,8 @@ from corels import load_from_csv, RuleList, CorelsClassifier
 from HeuristicRL import GreedyRLClassifier
 from HeuristicRL_DP import DPGreedyRLClassifier
 from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
+from HeuristicRL_DP_noise import DpNoiseGreedyRLClassifier
+
 import numpy as np
 import DP as dp
 
@@ -34,7 +36,7 @@ max_length = 5
 #TODO: Finaaaaally : run for a LOT of runs (try the computation platform)
 #TODO: Enjoy the result. And put it on latex :D
 
-def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Exponential"], datasets = ["compas", "adult"]):
+def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Laplace", "Gaussian", "Exponential"], datasets = ["compas", "adult"]):
   
   
     with Progress(*Progress.get_default_columns(), TimeElapsedColumn()) as progress:
@@ -78,7 +80,7 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Exponent
                         progress.update(method_bar, advance = 1)
                    
                    
-                    else : #exponential mechanism, if you add other mechanisms, do more if/else on the value of method
+                    elif method == "Exponential":
                         start= time.time()
                         res = np.zeros(runs)
                         for i in range(runs):
@@ -87,6 +89,17 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Exponent
                             res[i]= np.average(DP_rl.predict(X_unbias) == y)
                             
                         t.add_row([dataset, method, epsilon, DP_rl.delta, llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))], divider = True if epsilon == epsilons[-1] else False)
+                        progress.update(method_bar, advance = 1)
+                        
+                    else :
+                        start= time.time()
+                        res = np.zeros(runs)
+                        for i in range(runs):
+                            DP_rl =  DpNoiseGreedyRLClassifier(min_support=llambda, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = method)
+                            DP_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)                    
+                            res[i]= np.average(DP_rl.predict(X_unbias) == y)
+                            
+                        t.add_row([dataset, method, epsilon, pretty_format(DP_rl.delta, "e", 2), llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))])
                         progress.update(method_bar, advance = 1)
 
             progress.update(method_bar, description= "[green]All methods were benchmarked for {0}".format(dataset))

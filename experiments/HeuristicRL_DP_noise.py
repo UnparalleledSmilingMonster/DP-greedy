@@ -54,7 +54,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         min_supp_N = np.floor(self.min_support * n_samples)
         
         if self.noise == "Gaussian":
-            if (self.delta is None) : self.delta =1 / n_samples**2 	#set delta to polynomial if not set
+            if (self.delta is None) : self.delta = 1/ n_samples**2 	#set delta to polynomial if not set
             
         #print("DP aimed : ({0},{1})".format(self.epsilon, self.delta))       
         
