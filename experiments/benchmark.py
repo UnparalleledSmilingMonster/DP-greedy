@@ -47,7 +47,7 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Laplace"
             progress.update(dataset_bar, description = "[red]Processing {0}".format(dataset))                       
             
             X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
-            X_unbias,features_unbias = dp.clean_dataset(X,features, ["Race", "Age", "Gender"])
+            X_unbias,features_unbias = dp.clean_dataset(X,features, get_biases(dataset))
             N = len(X)
             
             

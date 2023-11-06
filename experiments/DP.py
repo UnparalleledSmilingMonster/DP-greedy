@@ -1,7 +1,6 @@
 import numpy as np
 from scipy import integrate, optimize
 
-
 beta_1 = 3-2*np.sqrt(2)
 beta_2 = 3+2*np.sqrt(2)
 
@@ -64,6 +63,19 @@ def laplace(epsilon, sensitivity, n):
     assert epsilon > 0 	
     return np.random.laplace(scale = sensitivity/epsilon, size = n)
 
+
+def confidence_interval_laplace(epsilon, confidence = 0.98):
+    """
+    The minimum support requirement jeopardizes the model DP guarantees. WHY?
+    Consider D1 a database. Fix lambda = 0.005 for instance.  Let r a rule. Suppose supp_D1(r) = 0.05. Let D2 an adjacent database to D1 that
+    misses one of the samples caught by r in D1. Then supp_D2(r) < 0.05 so r is discarded (non null probability to null probability) => not DP.
+    We offer propose a DP-framework of confidence interval for minimum support based on noising the support of a rule and comparing it to a confidence 
+    threshold.
+    """
+    
+    return np.ceil(- np.log(1-confidence/2)/epsilon)
+    
+      
 
 def gaussian(epsilon, delta, sensitivity, n):
     """
@@ -178,6 +190,14 @@ def clean_dataset(X,features, biases):
     rmv_idx = np.where(rmv > 0)[0]  #should be == 1 but safeguard is to take >= 1 
     return np.delete(X, rmv_idx, axis = 1), [feature for (idx,feature) in enumerate(features) if idx not in rmv_idx]
     
+
+def get_biases(dataset):
+    return unbias_compas if dataset=="compas" else unbias_adult
+    
+    
+unbias_compas=["Race", "Age", "Gender"]
+unbias_adult = ["gender", "age"]
+
 """
 print(exponential(1, 1, [1,2,3] ))
 
