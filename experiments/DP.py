@@ -73,7 +73,7 @@ def confidence_interval_laplace(epsilon, confidence = 0.98):
     threshold.
     """
     
-    return np.ceil(- np.log(1-confidence/2)/epsilon)
+    return np.ceil(- np.log(2-2*confidence)/epsilon)
         
 
 def gaussian(epsilon, delta, sensitivity, n):
