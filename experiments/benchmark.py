@@ -127,7 +127,7 @@ def pretty_format(number, mode = "f", num = 3):
     return form.format(number)
     
                          
-benchmark(runs = 20, datasets = ["compas", "adult"]) #, "australian-credit"])
+benchmark(runs = 3, datasets = ["compas", "adult"]) #, "australian-credit"])
 print(t) 
 
 with open(filename, 'w') as w:
