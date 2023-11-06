@@ -5,22 +5,23 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-dataset = "compas"
+dataset = "adult"
 min_support = 0.05
 max_length = 5
 max_card = 2
-epsilon = 10
+epsilon = 1
 compute_exact = False
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
+N_runs = 1
 
-X_unbias,features_unbias = dp.clean_dataset(X,features, ["Race", "Age", "Gender"])
+X_unbias,features_unbias = dp.clean_dataset(X,features, dp.unbias_adult)
 print(list(set(features)-set(features_unbias)))
 
 
-N_runs = 10
 res = np.zeros(N_runs)
 for i in range(N_runs):
+    print(i)
     if not compute_exact:
         # Greedy
         greedy_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace")

@@ -74,8 +74,7 @@ def confidence_interval_laplace(epsilon, confidence = 0.98):
     """
     
     return np.ceil(- np.log(1-confidence/2)/epsilon)
-    
-      
+        
 
 def gaussian(epsilon, delta, sensitivity, n):
     """

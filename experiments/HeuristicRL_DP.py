@@ -21,7 +21,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.gamma = 2
-        self.beta = self.epsilon/ self.max_length
+        self.beta = self.epsilon/ (2*self.max_length)
         
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
         if not (memory_limit is None):
@@ -37,7 +37,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
         max_length = self.max_length
         allow_negations = self.allow_negations
         verbosity = self.verbosity
-
+       
         rules = [] # will contain the list of lists of antecedents for each rule
         preds = [] # will contain the list of predictions for each rule
         cards = [] # will contain the list of per-class training examples cardinalities for each rule
@@ -94,7 +94,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 n_samples_remain = y_remain.size
                 n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                 # Minimum support check
-                if (n_samples_rule/n_samples) >= min_support and (n_samples_rule/n_samples) > 0:
+                if (n_samples_rule/n_samples) + dp.laplace(self.beta, 1,1)[0]  >= min_support and (n_samples_rule/n_samples) > 0:
                     average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
                     pred = 0 if average_outcome_rule < 0.5 else 1
                     if len(np.delete(y_remain, rule_capt_indices)) == 0: #to avoid computing empty mean (numpy warning)

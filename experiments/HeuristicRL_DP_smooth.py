@@ -9,7 +9,7 @@ Subclass of the CORELSClassifier class, training a rule list using a greedy meth
 
 class DpSmoothGreedyRLClassifier(CorelsClassifier):
 
-    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, noise = "Cauchy", verbosity=[]):
+    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, confidence = 0.98, noise = "Cauchy", verbosity=[]):
         self.max_card = max_card
         self.min_support = min_support
         self.max_length = max_length
@@ -20,7 +20,10 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.noise = noise
-        self.budget_per_node = self.epsilon / self.max_length
+        self.budget_per_node = self.epsilon / (2*self.max_length)
+        self.confidence = 0.98
+        
+        self.threshold = dp.confidence_interval_laplace(self.budget_per_node, self.confidence)
         
         if self.noise == "Cauchy":
             self.gamma = 2
@@ -105,7 +108,8 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                 n_samples_remain = y_remain.size
                 n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                 # Minimum support check
-                if (n_samples_rule/n_samples) >= min_support and (n_samples_rule/n_samples) > 0:
+                if (n_samples_rule/n_samples) +dp.laplace(self.budget_per_node,1,1)[0] >= min_support + self.threshold  \
+                and (n_samples_rule/n_samples) > 0:
                     average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
                     pred = 0 if average_outcome_rule < 0.5 else 1
                     if len(np.delete(y_remain, rule_capt_indices)) == 0: #to avoid computing empty mean (numpy warning)

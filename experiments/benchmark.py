@@ -23,12 +23,13 @@ lambda_letter = '\u03BB'
 verbosity=[]
 
 #Benchmark Table :
-t = PrettyTable(['dataset', 'Mechanism', epsilon_letter, delta_letter, lambda_letter, 'C_max', 'N', 'Runs', 'Avg. Time(s)', 'Accuracy'])
+t = PrettyTable(['dataset', 'Mechanism', epsilon_letter, delta_letter, lambda_letter, "Confidence", 'C_max', 'N', 'Runs', 'Avg. Time(s)', 'Accuracy'])
 
 max_card = 2
 epsilons = [0.1, 1 , 10]
 llambda = 0.05
 max_length = 5
+confidence = 0.98
 
 #TODO: Add Laplace noise WITHOUT smooth sensitivity
 #TODO: Test on more datasets
@@ -47,7 +48,7 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Laplace"
             progress.update(dataset_bar, description = "[red]Processing {0}".format(dataset))                       
             
             X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
-            X_unbias,features_unbias = dp.clean_dataset(X,features, get_biases(dataset))
+            X_unbias,features_unbias = dp.clean_dataset(X,features, dp.get_biases(dataset))
             N = len(X)
             
             
@@ -57,7 +58,7 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Laplace"
             #First compute the baseline algorithm (Greedy -Tree)
             greedy_rl = GreedyRLClassifier(min_support=llambda, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
             greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)        
-            t.add_row([dataset, 'GreedyRL', 'x', 'x', llambda, max_card, N, runs,pretty_format(time.time() - start), pretty_format(np.average(greedy_rl.predict(X_unbias) == y))])
+            t.add_row([dataset, 'GreedyRL', 'x', 'x', llambda, 'x', max_card, N, runs,pretty_format(time.time() - start), pretty_format(np.average(greedy_rl.predict(X_unbias) == y))])
             progress.update(method_bar, advance = 1)
             
             
@@ -72,11 +73,11 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Laplace"
                         noise = method.split("-")[1]
                         res = np.zeros(runs)
                         for i in range(runs):
-                            DP_rl = DpSmoothGreedyRLClassifier(min_support=llambda, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, delta =1/(N**2) , noise = noise) #delta is 0 for Cauchy noise
+                            DP_rl = DpSmoothGreedyRLClassifier(min_support=llambda, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, delta =1/(N**2) ,confidence = confidence, noise = noise) #delta is 0 for Cauchy noise
                             DP_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)                    
                             res[i]= np.average(DP_rl.predict(X_unbias) == y)
                             
-                        t.add_row([dataset, method, epsilon, pretty_format(DP_rl.delta, 'e', 2), llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))])
+                        t.add_row([dataset, method, epsilon, pretty_format(DP_rl.delta, 'e', 2), llambda, confidence, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))])
                         progress.update(method_bar, advance = 1)
                    
                    
@@ -88,10 +89,10 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Laplace"
                             DP_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)                    
                             res[i]= np.average(DP_rl.predict(X_unbias) == y)
                             
-                        t.add_row([dataset, method, epsilon, DP_rl.delta, llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))], divider = True if epsilon == epsilons[-1] else False)
+                        t.add_row([dataset, method, epsilon, DP_rl.delta, llambda, max_card, 'x', N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))], divider = True if epsilon == epsilons[-1] else False)
                         progress.update(method_bar, advance = 1)
                         
-                    else :
+                    else : #Global sensitivity Laplace and Gaussian
                         start= time.time()
                         res = np.zeros(runs)
                         for i in range(runs):
@@ -99,7 +100,7 @@ def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Laplace"
                             DP_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)                    
                             res[i]= np.average(DP_rl.predict(X_unbias) == y)
                             
-                        t.add_row([dataset, method, epsilon, pretty_format(DP_rl.delta, "e", 2), llambda, max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))])
+                        t.add_row([dataset, method, epsilon, pretty_format(DP_rl.delta, "e", 2), llambda, 'x', max_card, N, runs, pretty_format((time.time() - start)/runs), pretty_format(np.mean(res))])
                         progress.update(method_bar, advance = 1)
 
             progress.update(method_bar, description= "[green]All methods were benchmarked for {0}".format(dataset))
@@ -126,7 +127,7 @@ def pretty_format(number, mode = "f", num = 3):
     return form.format(number)
     
                          
-benchmark(runs = 1, datasets = ["compas", "adult"]) #, "australian-credit"])
+benchmark(runs = 20, datasets = ["compas", "adult"]) #, "australian-credit"])
 print(t) 
 
 with open(filename, 'w') as w:

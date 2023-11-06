@@ -20,7 +20,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.noise = noise
-        self.budget_per_node = self.epsilon / self.max_length
+        self.budget_per_node = self.epsilon / (2*self.max_length)
         self.sensitivity = 0.5 #In dimension 1, all norms are equal
         
         if self.noise == "Laplace":
@@ -99,7 +99,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                 n_samples_remain = y_remain.size
                 n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                 # Minimum support check
-                if (n_samples_rule/n_samples) >= min_support and (n_samples_rule/n_samples) > 0:
+                if (n_samples_rule/n_samples)+dp.laplace(self.budget_per_node,1,1)[0] >= min_support and (n_samples_rule/n_samples) > 0:
                     average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
                     pred = 0 if average_outcome_rule < 0.5 else 1
                     if len(np.delete(y_remain, rule_capt_indices)) == 0: #to avoid computing empty mean (numpy warning)
@@ -112,7 +112,6 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                     rule_gini = capt_gini #+ other_gini
                     if self.noise == "Gaussian":
-                        #TODO : Add Gaussian (epsilon, delta)-DP noise too
                         rule_gini += dp.gaussian(self.budget_per_node, self.delta, self.sensitivity, 1)[0] #noisy version
                     else : 
                         rule_gini += dp.laplace(self.budget_per_node, self.sensitivity, 1)[0] #noisy version

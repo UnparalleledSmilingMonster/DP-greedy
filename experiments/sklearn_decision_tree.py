@@ -6,6 +6,10 @@ from sklearn import metrics #Import scikit-learn metrics module for accuracy cal
 
 
 #Reference model to compare to for adult dataset
+#Create a greedy-rule list using successive decision trees of depth 1.
+
+max_length = 5
+
 
 dataset = pd.read_csv("data/adult.csv")
 
