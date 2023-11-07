@@ -8,7 +8,7 @@ import DP as dp
 dataset = "adult"
 min_support = 0.05
 max_length = 5
-max_card = 2
+max_card = 3
 epsilon = 1
 compute_exact = False
 verbosity = [] # ["mine"] # ["mine"]
@@ -40,7 +40,7 @@ for i in range(N_runs):
 greedy_rl = GreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
 greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)
 my_rl = greedy_rl
-
+print(my_rl)
 
 
 f = open("DP_results/laplace_smooth.txt", "a")
