@@ -17,9 +17,9 @@ DP models
 Benchmark and tests
 * `sensitivity.py` is a srcipt to visualize the difference between noises using Smoothed Sensitivity against Global Sensitivity
 * `benchmark.py` is a local benchmarking script testing various hyperparameters (max cardinality, max length, min support, confidence, DP-budget: epsilon, delta)
-* `main_greedy_cauchy.py` runs a number of instances of **HeuristicRL_DP_smooth** using Cauchy noise, records the results in the folder "DP_results"
-* `main_greedy_laplace.py`runs a number of instances of **HeuristicRL_DP_smooth** using Laplace noise, records the results in the folder "DP_results"
-* `main_greedy_exp.py`runs a number of instances of **HeuristicRL_DP** (Exponential mechanism), records the results in the folder "DP_results"
+* `main_greedy_cauchy.py` runs a number of instances of **DpSmoothGreedyRLClassifier** using Cauchy noise, records the results in the folder "DP_results"
+* `main_greedy_laplace.py`runs a number of instances of **DpSmoothGreedyRLClassifier** using Laplace noise, records the results in the folder "DP_results"
+* `main_greedy_exp.py`runs a number of instances of **DPGreedyRLClassifier** (Exponential mechanism), records the results in the folder "DP_results"
 
 **TODO**: Create a file for distributed computation across the roc com
 
