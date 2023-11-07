@@ -14,18 +14,13 @@ DP models
 * `HeuristicRL_DP.py` is a DP Greedy Rule List Classifier based on Exponential mechanism using Global sensitivity 
 * `HeuristicRL_DP_smooth.py` is a DP Greedy Rule List Classifier based on the Noisy Max mechanism using Smoothed sensitivity (either Cauchy noise for pure DP or Laplace noise for approximate DP)
 
-
-
 Benchmark and tests
 * `sensitivity.py` is a srcipt to visualize the difference between noises using Smoothed Sensitivity against Global Sensitivity
-* `benchmark.py`
+* `benchmark.py` is a local benchmarking script testing various hyperparameters (max cardinality, max length, min support, confidence, DP-budget: epsilon, delta)
+* `main_greedy_cauchy.py` runs a number of instances of **HeuristicRL_DP_smooth** using Cauchy noise, records the results in the folder "DP_results"
+* `main_greedy_laplace.py`runs a number of instances of **HeuristicRL_DP_smooth** using Laplace noise, records the results in the folder "DP_results"
+* `main_greedy_exp.py`runs a number of instances of **HeuristicRL_DP** (Exponential mechanism), records the results in the folder "DP_results"
 
-
-**TODO**: 
-
-
-
-* `tentative_greedy_RL_class.py` provides an example to learn Rule Lists with tunable depth, width, and minimum rules support, for both our custom version of CORELS and our Greedy Rule List classifier implementation
-
+**TODO**: Create a file for distributed computation across the roc com
 
 Folder `data` contains the datasets used in the experiments (and many others!)
