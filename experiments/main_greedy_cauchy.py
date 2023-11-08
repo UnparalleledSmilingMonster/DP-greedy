@@ -7,19 +7,19 @@ import DP as dp
 
 
 dataset = "compas"
-min_support = 0.05
+min_support = 0.20
 max_length = 5
-max_card = 2
-epsilon = 1
+max_card = 3
+epsilon = 2
 compute_exact = False
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
 
-X_unbias,features_unbias = dp.clean_dataset(X,features, ["Race", "Age", "Gender"])
+X_unbias,features_unbias = dp.clean_dataset(X,features,dp.get_biases(dataset))
 print(list(set(features)-set(features_unbias)))
 
 
-N_runs = 1
+N_runs = 10
 res = np.zeros(N_runs)
 for i in range(N_runs):
     if not compute_exact:
@@ -29,7 +29,7 @@ for i in range(N_runs):
         my_rl = greedy_rl
     else:
         # CORELS
-        corels_rl = CorelsClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, c=0.0, n_iter=1000000)
+        corels_rl = CorelsClassifier(min_support=0.00, max_length=max_length, verbosity=verbosity, max_card=max_card, c=0.0, n_iter=1000000)
         corels_rl.fit(X, y, features=features, prediction_name=prediction)
         my_rl = corels_rl
     

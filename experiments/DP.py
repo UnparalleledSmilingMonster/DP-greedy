@@ -27,7 +27,7 @@ def cauchy_smooth(beta, x, gamma, sensitivity):
                    # this is well defined because pi *u - pi/2 lies in [-pi/2, pi/2]
     
         u = np.random.uniform(0,1)
-        eta = np.tan(np.pi *u - np.pi/2)       
+        eta = np.tan(np.pi *u - np.pi/2)   
     
     else : 
         valid = False 

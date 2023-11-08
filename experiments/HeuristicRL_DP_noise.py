@@ -99,7 +99,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                 n_samples_remain = y_remain.size
                 n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                 # Minimum support check
-                if (n_samples_rule+dp.laplace(self.budget_per_node,1,1)[0] )/n_samples >= min_support and (n_samples_rule/n_samples) > 0:
+                if (n_samples_rule/n_samples) > 0:
                     average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
                     pred = 0 if average_outcome_rule < 0.5 else 1
                     if len(np.delete(y_remain, rule_capt_indices)) == 0: #to avoid computing empty mean (numpy warning)
@@ -126,7 +126,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                         best_pred = pred
                         best_rule_capt_indices = rule_capt_indices
                 else:
-                    list_of_rules.remove(a_rule) # the rule won't satisfy min. support anymore
+                    list_of_rules.remove(a_rule) # the rule does not catch anything
 
             if best_rule == -1: # no rule OK found
                 stop = True 
