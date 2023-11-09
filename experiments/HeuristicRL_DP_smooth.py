@@ -9,7 +9,7 @@ Subclass of the CORELSClassifier class, training a rule list using a greedy meth
 
 class DpSmoothGreedyRLClassifier(CorelsClassifier):
 
-    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, confidence = 0.98, noise = "Cauchy", verbosity=[]):
+    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, confidence = 0.98, noise = "Cauchy", verbosity=[], seed = -1):
         self.max_card = max_card
         self.min_support = min_support
         self.max_length = max_length
@@ -24,6 +24,8 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         self.confidence = 0.98
         
         self.threshold = dp.confidence_interval_laplace(self.budget_per_node, self.confidence)
+        
+        DP.set_seed(seed)
         
         if self.noise == "Cauchy":
             self.gamma = 2

@@ -7,13 +7,15 @@ Subclass of the CORELSClassifier class, training a rule list using a greedy meth
 """
 class GreedyRLClassifier(CorelsClassifier):
 
-    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, verbosity=[]):
+    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, verbosity=[], seed = -1):
         self.max_card = max_card
         self.min_support = min_support
         self.max_length = max_length
         self.allow_negations = allow_negations
         self.verbosity = verbosity
         self.status = 3
+        
+        DP.set_seed(seed)
 
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
         if not (memory_limit is None):

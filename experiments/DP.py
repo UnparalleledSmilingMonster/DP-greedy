@@ -4,11 +4,16 @@ from scipy import integrate, optimize
 beta_1 = 3-2*np.sqrt(2)
 beta_2 = 3+2*np.sqrt(2)
 
+rng = np.random.default_rng(-1)
+
+def set_seed(seed):
+    rng = np.random.default_rng(seed)
+
 
 def laplace_smooth(epsilon, x, sensitivity):
     """Returns laplace noise using smooth sensitivity : guarantee = (epsilon, delta) -DP with beta = epsilon /(2*ln(2/delta)) """
     
-    return 2 * sensitivity /epsilon * np.random.laplace(scale = 1, size = 1)[0]
+    return 2 * sensitivity /epsilon * rng.laplace(scale = 1, size = 1)[0]
 
 def generalized_cauchy_pdf(x,a):
     return 1/(1+np.abs(x)**a)
@@ -26,7 +31,7 @@ def cauchy_smooth(beta, x, gamma, sensitivity):
                    #solve for z : arctan(z)/ pi = u -1/2 ==> z = tan( pi *u - pi/2)
                    # this is well defined because pi *u - pi/2 lies in [-pi/2, pi/2]
     
-        u = np.random.uniform(0,1)
+        u = rng.uniform(0,1)
         eta = np.tan(np.pi *u - np.pi/2)   
     
     else : 
@@ -45,7 +50,7 @@ def cauchy_smooth(beta, x, gamma, sensitivity):
 
             if z_solution.converged:
                 valid = True
-                eta = ( 1 if np.random.uniform() < 0.5 else -1) * z_solution.root
+                eta = ( 1 if rng.uniform() < 0.5 else -1) * z_solution.root
             else:
                 valid=False
     
@@ -61,7 +66,7 @@ def laplace(epsilon, sensitivity, n):
     """
     assert sensitivity >=0
     assert epsilon > 0 	
-    return np.random.laplace(scale = sensitivity/epsilon, size = n)
+    return rng.laplace(scale = sensitivity/epsilon, size = n)
 
 
 def confidence_interval_laplace(epsilon, confidence = 0.98):
@@ -85,7 +90,7 @@ def gaussian(epsilon, delta, sensitivity, n):
     assert epsilon > 0 	
     
     c = np.sqrt(2 * np.log(1.25/delta)) +1e-5 #The DP holds if c² > 2 * np.log(1.25/delta) so we add a small term 
-    return np.random.normal(scale = c*sensitivity/epsilon, size = n)
+    return rng.normal(scale = c*sensitivity/epsilon, size = n)
 
    
 def exponential(epsilon, sensitivity, utility):
@@ -99,7 +104,7 @@ def exponential(epsilon, sensitivity, utility):
     probs = np.exp(epsilon* utility/(2*sensitivity) )
     probs/= np.sum(probs)
     
-    return np.random.choice(np.arange(0,n), size=1, p=None)
+    return rng.choice(np.arange(0,n), size=1, p=None)
  	
 
 def Q_roots(beta):
@@ -197,14 +202,4 @@ def get_biases(dataset):
 unbias_compas=["Race", "Age", "Gender"]
 unbias_adult = ["gender", "age"]
 
-"""
-print(exponential(1, 1, [1,2,3] ))
 
-print(laplace(1,1,10))
-
-L = [1,2,3]
-print(L[:1])
-
-a,b = [0,1]
-print(a,b)
-"""

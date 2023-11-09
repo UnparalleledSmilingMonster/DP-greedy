@@ -9,7 +9,7 @@ Subclass of the CORELSClassifier class, training a rule list using a greedy meth
 
 class DpNoiseGreedyRLClassifier(CorelsClassifier):
 
-    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, noise = "Laplace", verbosity=[]):
+    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, noise = "Laplace", verbosity=[], seed = -1):
         self.max_card = max_card
         self.min_support = min_support
         self.max_length = max_length
@@ -26,6 +26,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         if self.noise == "Laplace":
             self.delta =0  #pure DP with Laplace noise (global sensitivity)
             
+        DP.set_seed(seed)
         
 
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
