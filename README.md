@@ -20,7 +20,9 @@ Benchmark and tests
 * `main_greedy_cauchy.py` runs a number of instances of **DpSmoothGreedyRLClassifier** using Cauchy noise, records the results in the folder "DP_results"
 * `main_greedy_laplace.py`runs a number of instances of **DpSmoothGreedyRLClassifier** using Laplace noise, records the results in the folder "DP_results"
 * `main_greedy_exp.py`runs a number of instances of **DPGreedyRLClassifier** (Exponential mechanism), records the results in the folder "DP_results"
-
-**TODO**: Create a file for distributed computation across the roc com
+* `main.py` can parse arguments inputted through the command line to run a model with the desired hyperparameters
 
 Folder `data` contains the datasets used in the experiments (and many others!)
+Folder `pfcalcul` contains the code to run benchmarks on the distributed computation unit.
+
+[//]: #Folder `light-dp-greedy` is a minimal version of the repository to be run on the distributed computation unit.
