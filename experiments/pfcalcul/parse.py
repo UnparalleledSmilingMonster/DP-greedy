@@ -5,19 +5,19 @@ def pformat(var, mode ="f", num=3 ):
     if (var is None or var==0) : return 'x'
     form = "{" + "0:.{0}{1}".format(num,mode) + "}"
     return form.format(var)
-    
-     
+         
     
 def order(dic):
+    datasets = set([dic[key][0] for key in dic])
     L=list(dict(sorted(dic.items())).values())
-    """
-    L = separate(L,0)
-    print(L)
-    for i in range(8):
-        print(i)
-        L = list(map(lambda x : separate(x,i), L))
-    """
-    print(L)
+    for i in range(len(L)):
+        L[i].append(True if L[i][1] == "vanilla" else False)
+                
+    for dataset in datasets:
+        buff = [elt[-2] if (elt[0] == dataset and elt[1]!="vanilla") else -1 for elt in L]
+        print(buff)
+        idx = buff.index(max(buff))
+        L[idx][-1] = True    
     
     return L
     
@@ -34,10 +34,11 @@ def latex_tabular(filename, params, dic):
     tabular += fst_line[:-1] + "\\\\\n \\hline \\hline\n"
     
     line = ""
+    n = len(L[0])
     for result in L :
         line = ""
-        for elt in result:
-            line +=  str(elt) + "&"
+        for i in range(n-1):
+            line +=  "\\textbf{" + str(result[i]) +"}"+ "&" if result[n-1] else str(result[i]) + "&" #in bold if best result
         tabular += line[:-1] + "\\\\\n \\hline\n"    
     
     tabular += """\\end{tabular}\n\\end{center}\n\\caption{Comparing DP methods and Vanilla Greedy RL}\n\\end{figure}"""
