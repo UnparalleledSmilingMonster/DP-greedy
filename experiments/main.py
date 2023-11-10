@@ -15,9 +15,9 @@ delta_letter='\u03B4'
 lambda_letter = '\u03BB'
 
 def pformat(var, mode ="f", num=3 ):
-    if (var is None or var==0) : return 'x'
+    if (var is None or var =="None" or var==0) : return 'x'
     form = "{" + "0:.{0}{1}".format(num,mode) + "}"
-    return form.format(var)
+    return form.format(float(var))
     
 def rformat(var):
     return 'x' if (var is None or var==0) else var
@@ -46,11 +46,11 @@ if __name__ == '__main__':
         start= time.time()
         greedy_rl = GreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=args.max_card, allow_negations=True, seed = args.seed )
         greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction) 
-        end=time.time() - start           
+        end=time.time() - start       or var =="None"    
         
     elif args.mechanism == "Exponential":
         start= time.time()
-        greedy_rl =  DPGreedyRLClassifier(min_support=0.0, max_length=max_length, max_card=max_card, allow_negations=True, epsilon = epsilon, delta = 0.0, seed = args.seed)
+        greedy_rl =  DPGreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=args.max_card, allow_negations=True, epsilon = args.epsilon, delta = 0.0, seed = args.seed)
         greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)       
         end=time.time() - start                        
         
