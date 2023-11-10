@@ -1,13 +1,14 @@
 import numpy as np
 from corels import RuleList, CorelsClassifier
 from utils_greedy import *
+import DP as dp
 
 """
 Subclass of the CORELSClassifier class, training a rule list using a greedy method.
 """
 class GreedyRLClassifier(CorelsClassifier):
 
-    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, verbosity=[], seed = -1):
+    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, verbosity=[], seed = 42):
         self.max_card = max_card
         self.min_support = min_support
         self.max_length = max_length
@@ -15,7 +16,7 @@ class GreedyRLClassifier(CorelsClassifier):
         self.verbosity = verbosity
         self.status = 3
         
-        DP.set_seed(seed)
+        dp.set_seed(seed)
 
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
         if not (memory_limit is None):

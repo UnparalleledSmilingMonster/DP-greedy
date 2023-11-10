@@ -4,7 +4,7 @@ from scipy import integrate, optimize
 beta_1 = 3-2*np.sqrt(2)
 beta_2 = 3+2*np.sqrt(2)
 
-rng = np.random.default_rng(-1)
+rng = np.random.default_rng(42)
 
 def set_seed(seed):
     rng = np.random.default_rng(seed)

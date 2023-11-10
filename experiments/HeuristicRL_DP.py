@@ -9,7 +9,7 @@ Subclass of the CORELSClassifier class, training a rule list using a greedy meth
 """
 class DPGreedyRLClassifier(CorelsClassifier):
 
-    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, verbosity=[], seed = -1):
+    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, verbosity=[], seed = 42):
         self.max_card = max_card
         self.min_support = min_support
         self.max_length = max_length
