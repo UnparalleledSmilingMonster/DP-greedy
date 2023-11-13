@@ -19,6 +19,7 @@ def highlight(L, dic):
     datasets = set([dic[key][0] for key in dic])
     max_lengths = set([dic[key][1] for key in dic])
     epsilons = set([dic[key][3] for key in dic])
+    epsilons.remove('x')
     
     for i in range(len(L)):
         L[i].append(True if L[i][1] == "vanilla" else False)
@@ -28,20 +29,20 @@ def highlight(L, dic):
     for dataset in datasets:
         buff = [elt[-4] if (elt[0] == dataset and elt[2]!="vanilla") else -1 for elt in L]
         idx = buff.index(max(buff))
-        L[idx][-1] = True    
+        L[idx][-3] = True    
         for max_length in max_lengths:
             buff2 = [buff[i] if (L[i][1] == max_length and L[i][2]!="vanilla") else -1 for i in range(len(L))]
             idx = buff2.index(max(buff2))
             L[idx][-2] = True           
             for epsilon in epsilons:
-                buff3 = [buff2[i] if (L[i][3] == epsilon and L[i][2]!="vanilla") else -1 for i in range(len(L))]
+                buff3 = [buff2[i] if (L[i][3] == epsilon) else -1 for i in range(len(L))]
                 idx = buff3.index(max(buff3))
-                L[idx][-3] = True  
+                L[idx][-1] = True  
     return L         
     
 def order(dic):
     L=list(dict(sorted(dic.items())).values())    
-    L = highlight(L)
+    L = highlight(L, dic)
     
     return L
     
@@ -57,15 +58,15 @@ def latex_tabular(filename, params, dic):
         fst_line += params[i] + "&"        
     tabular += fst_line[:-1] + "\\\\\n \\hline \\hline\n"
     
-    emph = ["\\textbf{0}", "\\textit{0}", "\\textcolor{blue}{0}"]
+    emph = ["\\textcolor{{blue}}{{{0}}}", "\\textbf{{{0}}}", "\\hl{{{0}}}"]
     line = ""
     n = len(L[0])
     for result in L :
         line = ""
-        for i in range(n-1):
+        for i in range(n-3):
             form = str(result[i])
             for j in range(3):
-                form = emph[j].format(line) if result[i][-j] else line    #in bold if best result            
+                form = emph[j].format(form) if result[-(j+1)] else form    #in bold if best result            
             line +=  form + "&" 
         tabular += line[:-1] + "\\\\\n \\hline\n"    
     
@@ -86,9 +87,9 @@ def GreedyRLParser(directory):
             key = "".join(str(data[0:8])) #primary key (not accounting for the seed = repetition)
             
             if key in res :
-                res[key][8] += 1
-                res[key][9] += float(data[-2])  #time 
-                res[key][10] += float(data[-1])  #accuracy
+                res[key][9] += 1
+                res[key][10] += float(data[-2])  #time 
+                res[key][11] += float(data[-1])  #accuracy
             else :
                 res[key] = data[0:9]
                 if res[key][2].startswith("smooth"): res[key][2] = res[key][2].replace("smooth", "sm")
@@ -98,8 +99,8 @@ def GreedyRLParser(directory):
                 res[key].append(float(data[-1]))    
         
     for key in res :
-        res[key][9] = float(pformat(res[key][9]/res[key][8]),num=2)
-        res[key][10] = float(pformat(res[key][10]/res[key][8]))     
+        res[key][10] = float(pformat(res[key][10]/res[key][9], num=2))
+        res[key][11] = float(pformat(res[key][11]/res[key][9]))     
                     
     return res
                 
