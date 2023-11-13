@@ -40,7 +40,7 @@ def setup():
     max_lengths = [3, 5, 7]
     max_cards = [2]
     min_supports = [0.05, 0.10, 0.15, 0.20, 0.25]
-    epsilons= [0.1, 0.5, 1, 5, 10, 50]
+    epsilons= [0.1, 0.5, 1, 10, 50]
     deltas = [None]
     confidences = [0.95, 0.98]    
     """
