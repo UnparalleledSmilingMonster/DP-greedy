@@ -72,7 +72,7 @@ if __name__ == '__main__':
                                          
     else : raise Exception("The mechanism desired is not implemented.")
 
-    print([args.dataset, args.mechanism, rformat(args.epsilon), pformat(args.delta, "e", 2), rformat(args.min_support), rformat(args.confidence), args.max_card, N, end, np.average(greedy_rl.predict(X_unbias) == y)])
+    print([args.dataset, args.max_length, args.mechanism, rformat(args.epsilon), pformat(args.delta, "e", 2), rformat(args.min_support), rformat(args.confidence), args.max_card, N, end, np.average(greedy_rl.predict(X_unbias) == y)])
 
 
 
