@@ -13,7 +13,7 @@ def set_seed(seed):
 
 
 
-def laplace_smooth(epsilon, x, sensitivity):
+def laplace_smooth(epsilon, sensitivity):
     """Returns laplace noise using smooth sensitivity : guarantee = (epsilon, delta) -DP with beta = epsilon /(2*ln(2/delta)) """
     
     return 2 * sensitivity /epsilon * rng.laplace(scale = 1, size = 1)[0]
@@ -22,7 +22,7 @@ def generalized_cauchy_pdf(x,a):
     return 1/(1+np.abs(x)**a)
     
 
-def cauchy_smooth(beta, x, gamma, sensitivity):
+def cauchy_smooth(beta, gamma, sensitivity):
     """
     Uses inverse transform sampling method to sample the element from the Cauchy like distribution.
     Efficient to draw 1 sample but costly for lots of samples... The program should be enhanced here because it takes quite some time.

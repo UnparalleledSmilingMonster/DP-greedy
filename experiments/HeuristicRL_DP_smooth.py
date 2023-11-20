@@ -83,12 +83,13 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
             if len(X_remain) + dp.laplace(self.budget_per_node,1,1)[0] >= min_supp_N + self.threshold: 
                 
                 stop = False
-                smooth_sensitivity = dp.smooth_sensitivity_gini(len(X_remain),self.beta, min_supp = min_supp_N)     
+                confident_X_remain = max(len(X_remain),min_supp_N)
+                smooth_sensitivity = dp.smooth_sensitivity_gini(confident_X_remain,self.beta, min_supp = min_supp_N)     
                 average_outcome_remaining = np.average(y_remain)
                 best_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added$
 
-                if self.noise=="Cauchy": best_gini +=dp.cauchy_smooth(self.beta, len(X_remain), self.gamma, smooth_sensitivity) #noisy version
-                else : best_gini += dp.laplace_smooth(self.budget_per_node, len(X_remain), smooth_sensitivity) #noisy version
+                if self.noise=="Cauchy": best_gini +=dp.cauchy_smooth(self.beta, self.gamma, smooth_sensitivity) #noisy version
+                else : best_gini += dp.laplace_smooth(self.budget_per_node, smooth_sensitivity) #noisy version
                 
                 best_capt_gini = (1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2) # only used to compare in case of equality
                 best_rule = -1
@@ -130,9 +131,9 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                         capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                         rule_gini = capt_gini #+ other_gini
                         if self.noise == "Cauchy":
-                            rule_gini += dp.cauchy_smooth(self.beta, len(X_remain), self.gamma, smooth_sensitivity) #noisy version
+                            rule_gini += dp.cauchy_smooth(self.beta, self.gamma, smooth_sensitivity) #noisy version
                         else : 
-                            rule_gini += dp.laplace_smooth(self.budget_per_node, len(X_remain), smooth_sensitivity) #noisy version
+                            rule_gini += dp.laplace_smooth(self.budget_per_node, smooth_sensitivity) #noisy version
                         #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
                         if (rule_gini < best_gini) or \
                             ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
