@@ -123,8 +123,8 @@ class GreedyRLClassifier(CorelsClassifier):
         # default rule
         if y_remain.size > 0:
             capt_labels_counts = np.unique(y_remain, return_counts=True)
-            if capt_labels_counts[0].size == 2:
-                cards.append(capt_labels_counts[1])
+            if capt_labels_counts[0].size == 2: #values
+                cards.append(capt_labels_counts[1]) #counts
             else:
                 if capt_labels_counts[0][0] == 0:
                     cards.append([capt_labels_counts[1][0], 0])
