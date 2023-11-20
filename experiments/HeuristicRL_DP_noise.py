@@ -26,7 +26,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         if self.noise == "Laplace":
             self.delta =0  #pure DP with Laplace noise (global sensitivity)
             
-        DP.set_seed(seed)
+        dp.set_seed(seed)
         
 
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):

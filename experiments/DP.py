@@ -5,9 +5,12 @@ beta_1 = 3-2*np.sqrt(2)
 beta_2 = 3+2*np.sqrt(2)
 
 rng = np.random.default_rng(42)
+#print(rng.bit_generator.state)
 
 def set_seed(seed):
+    global rng
     rng = np.random.default_rng(seed)
+
 
 
 def laplace_smooth(epsilon, x, sensitivity):

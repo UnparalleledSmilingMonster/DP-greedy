@@ -25,7 +25,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         
         self.threshold = dp.confidence_interval_laplace(self.budget_per_node, self.confidence)
         
-        DP.set_seed(seed)
+        dp.set_seed(seed)
         
         if self.noise == "Cauchy":
             self.gamma = 2

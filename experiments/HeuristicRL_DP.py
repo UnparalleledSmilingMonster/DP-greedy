@@ -17,7 +17,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
         self.verbosity = verbosity
         self.status = 3
         
-        DP.set_seed(seed)
+        dp.set_seed(seed)
         
         #For (epsilon, delta)-DP
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
