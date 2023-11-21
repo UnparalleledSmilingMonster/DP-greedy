@@ -1,5 +1,7 @@
 import os
 import ast
+import json 
+
 
 """
 dic_format = {'dataset':0, 'max_length':1, 'Mechanism':2, epsilon_letter:3, delta_letter:4, lambda_letter:5, "Confidence":6, 'C_max':7, 'N':8, 'Runs':9, 'Avg. Time(s)':10, 'Accuracy':11}
@@ -22,8 +24,8 @@ def highlight(L, dic):
     epsilons.remove('x')
     
     for i in range(len(L)):
-        L[i].append(True if L[i][1] == "vanilla" else False)
-        L[i].append(True if L[i][1] == "vanilla" else False)
+        L[i].append(True if L[i][2] == "vanilla" else False)
+        L[i].append(True if L[i][2] == "vanilla" else False)
         L[i].append(False)
                 
     for dataset in datasets:
@@ -78,33 +80,47 @@ def latex_tabular(filename, params, dic):
 
 def GreedyRLParser(directory):
     res = {}
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        # checking if it is a file
-        with open(f, 'r') as file :
-            line = file.readline() #we only read the first line as the rest is warnings
-            data = ast.literal_eval(line)
-            key = "".join(str(data[0:8])) #primary key (not accounting for the seed = repetition)
-            
-            if key in res :
-                res[key][9] += 1
-                res[key][10] += float(data[-2])  #time 
-                res[key][11] += float(data[-1])  #accuracy
-            else :
-                res[key] = data[0:9]
-                if res[key][2].startswith("smooth"): res[key][2] = res[key][2].replace("smooth", "sm")
-                elif res[key][2].startswith("global"):res[key][2] = res[key][2].replace("global", "gl")
-                res[key].append(1)
-                res[key].append(float(data[-2]))  #time 
-                res[key].append(float(data[-1]))    
-        
-    for key in res :
-        res[key][10] = float(pformat(res[key][10]/res[key][9], num=2))
-        res[key][11] = float(pformat(res[key][11]/res[key][9]))     
-                    
-    return res
+    
+    if not os.path.exists("summary.nfo"):
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
+            # checking if it is a file
+            with open(f, 'r') as file :
+                line = file.readline() #we only read the first line as the rest is warnings
+                #print(line)
+                data = ast.literal_eval(line)
+                key = "".join(str(data[0:8])) #primary key (not accounting for the seed = repetition)
                 
-
+                if key in res :
+                    res[key][9] += 1
+                    res[key][10] += float(data[-2])  #time 
+                    res[key][11] += float(data[-1])  #accuracy
+                else :
+                    res[key] = data[0:9]
+                    if res[key][2].startswith(if __name__ == '__main__':    
+    epsilon_letter='\u03B5'
+    delta_letter='\u03B4'
+    lambda_letter = '\u03BB'
+    params = ['dataset', 'Mechanism', epsilon_letter, delta_letter, lambda_letter, "Confidence", 'C_max', 'N', 'Runs', 'Avg. Time(s)', 'Accuracy']"smooth"): res[key][2] = res[key][2].replace("smooth", "sm")
+                    elif res[key][2].startswith("global"):res[key][2] = res[key][2].replace("global", "gl")
+                    res[key].append(1)
+                    res[key].append(float(data[-2]))  #time 
+                    res[key].append(float(data[-1])) 
+                    
+        for key in res :
+            res[key][10] = float(pformat(res[key][10]/res[key][9], num=2))
+            res[key][11] = float(pformat(res[key][11]/res[key][9]))  
+            
+        with open("summary.nfo", "w") as summary:
+             summary.write(json.dumps(res)) 
+             summary.close()
+        return res
+     
+    else: 
+        with open("summary.nfo", 'r') as summary :
+            res = json.load(summary)
+            summary.close()
+        return res
         
 
 if __name__ == '__main__':    

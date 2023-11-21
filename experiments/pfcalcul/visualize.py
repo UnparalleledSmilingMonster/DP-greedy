@@ -12,6 +12,7 @@ lambda_letter = '\u03BB'
 
 def method_epsilon_graph(res, dataset = "compas", max_length = 7):
     methods = sorted(set([res[key][2] for key in res]))
+    methods.remove("vanilla")
     epsilons = set([res[key][3] for key in res])
     epsilons.remove('x')
     epsilons = sorted(epsilons)
@@ -19,7 +20,11 @@ def method_epsilon_graph(res, dataset = "compas", max_length = 7):
     accuracies = np.zeros((len(methods), len(epsilons)))
     
     for key in res :
-        if res[key][1] != max_length or res[key][0] != dataset or res[key][2]=="vanilla" : continue
+        if res[key][1] != max_length or res[key][0] != dataset : continue
+        if res[key][2] == "vanilla":
+            best = res[key][11]
+            continue
+            
         else:
             i = methods.index(res[key][2])
             j = epsilons.index(res[key][3])        
@@ -28,6 +33,7 @@ def method_epsilon_graph(res, dataset = "compas", max_length = 7):
     plt.figure(figsize=(12,10))
     for i in range(len(methods)):    
         plt.plot(epsilons, accuracies[i], label = methods[i])
+    plt.axhline(y = best,linestyle = ':', linewidth=3, label = "Vanilla baseline")
     plt.xlabel(epsilon_letter)
     plt.ylabel("Accuracy")
     plt.title("Method comparison for dataset {0}".format(dataset))
