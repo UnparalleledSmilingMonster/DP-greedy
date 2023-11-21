@@ -14,6 +14,10 @@ epsilon_letter='\u03B5'
 delta_letter='\u03B4'
 lambda_letter = '\u03BB'
 
+
+confidence = 0.98
+max_card = 2
+
 def pformat(var, mode ="f", num=3 ):
     if (var is None or var =="None" or var==0) : return 'x'
     form = "{" + "0:.{0}{1}".format(num,mode) + "}"
@@ -44,20 +48,20 @@ if __name__ == '__main__':
 
     if args.mechanism == "vanilla":
         start= time.time()
-        greedy_rl = GreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=args.max_card, allow_negations=True, seed = args.seed )
+        greedy_rl = GreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=max_card, allow_negations=True, seed = args.seed )
         greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction) 
         end=time.time() - start       or var =="None"    
         
     elif args.mechanism == "Exponential":
         start= time.time()
-        greedy_rl =  DPGreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=args.max_card, allow_negations=True, epsilon = args.epsilon, delta = 0.0, seed = args.seed)
+        greedy_rl =  DPGreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=max_card, allow_negations=True, epsilon = args.epsilon, delta = 0.0, seed = args.seed)
         greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)       
         end=time.time() - start                        
         
     elif args.mechanism.startswith("smooth"):
         start= time.time()
         noise = args.mechanism.split("-")[1]
-        greedy_rl = DpSmoothGreedyRLClassifier(min_support=args.min_support, max_length=args.max_length, max_card=args.max_card, allow_negations=True, epsilon = args.epsilon, delta =args.delta, confidence = args.confidence, noise = noise, seed = args.seed)
+        greedy_rl = DpSmoothGreedyRLClassifier(min_support=args.min_support, max_length=args.max_length, max_card=max_card, allow_negations=True, epsilon = args.epsilon, delta =args.delta, confidence = confidence, noise = noise, seed = args.seed)
         greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)        
         args.delta =greedy_rl.delta       
         end=time.time() - start           
@@ -65,14 +69,14 @@ if __name__ == '__main__':
     elif args.mechanism.startswith("global"):
         start= time.time()
         noise = args.mechanism.split("-")[1]
-        greedy_rl = DpNoiseGreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=args.max_card, allow_negations=True, epsilon = args.epsilon, delta =args.delta, noise = noise, seed = args.seed) 
+        greedy_rl = DpNoiseGreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=max_card, allow_negations=True, epsilon = args.epsilon, delta =args.delta, noise = noise, seed = args.seed) 
         greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)  
         args.delta =greedy_rl.delta
         end=time.time() - start           
                                          
     else : raise Exception("The mechanism desired is not implemented.")
 
-    print([args.dataset, args.max_length, args.mechanism, rformat(args.epsilon), pformat(args.delta, "e", 2), rformat(args.min_support), rformat(args.confidence), args.max_card, N, end, np.average(greedy_rl.predict(X_unbias) == y)])
+    print([args.dataset, args.max_length, args.mechanism, rformat(args.epsilon), pformat(args.delta, "e", 2), rformat(args.min_support), N, end, np.average(greedy_rl.predict(X_unbias) == y)])
 
 
 

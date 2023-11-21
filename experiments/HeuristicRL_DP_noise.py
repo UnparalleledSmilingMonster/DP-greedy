@@ -24,7 +24,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         self.sensitivity = 0.5 #In dimension 1, all norms are equal
         
         if self.noise == "Laplace":
-            self.delta =0  #pure DP with Laplace noise (global sensitivity)
+            self.delta = 0  #pure DP with Laplace noise (global sensitivity)
             
         dp.set_seed(seed)
         
