@@ -76,7 +76,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         # Pre-mining of the rules (takes into account min support)
         list_of_rules, tot_rules = mine_rules_combinations(X, max_card, min_support, allow_negations, features, verbosity)
 
-        while (len(rules) < max_length) and (not stop) and (self.status == 0):
+        while (len(rules) < max_length -1) and (not stop) and (self.status == 0):
             # Greedy choice for next rule    
             
             stop=True
@@ -176,22 +176,26 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                     cards.append([capt_labels_counts[1][0], 0])
                 else:
                     cards.append([0, capt_labels_counts[1][0]])
-            average_outcome_rule = np.mean(y_remain)
-            if average_outcome_rule < 0.5:
-                pred = 0
-            else:
-                pred = 1
+
+            pred_default = dp.exponential(self.budget_per_node, 1, cards[-1], disp = False)[0]
             rules.append([0])
-            preds.append(pred)
+            preds.append(pred_default)
         else: # No training data at all fall into the default prediction, then by default predict overall majority
-            average_outcome_rule = np.average(y)
-            if average_outcome_rule < 0.5:
-                pred = 0
+            capt_labels_counts = np.unique(y, return_counts=True)
+            card = []
+            if capt_labels_counts[0].size == 2:
+                card = capt_labels_counts[1]
             else:
-                pred = 1
+                if capt_labels_counts[0][0] == 0:
+                    card = [capt_labels_counts[1][0], 0]
+                else:
+                    card= [0, capt_labels_counts[1][0]]
+                    
+            pred_default = dp.exponential(self.budget_per_node, 1, card, disp = False)[0]
+
             cards.append([0,0])
             rules.append([0])
-            preds.append(pred)
+            preds.append(pred_default)
 
         # Post-processing step: remove useless rules that do no change the classification function (i.e. rules before the default decision with the same prediction)
         if perform_post_pruning:

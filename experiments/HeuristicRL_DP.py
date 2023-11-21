@@ -22,8 +22,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
         #For (epsilon, delta)-DP
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
-        self.gamma = 2
-        self.beta = self.epsilon/ (2*self.max_length)
+        self.budget_per_node = self.epsilon/ (2*self.max_length)
         
     def fit(self, X, y, features=[], prediction_name="prediction", time_limit=None, memory_limit=None, perform_post_pruning=False):
         if not (memory_limit is None):
@@ -57,7 +56,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
         # Pre-mining of the rules (takes into account min support)
         list_of_rules, tot_rules = mine_rules_combinations(X, max_card, min_support, allow_negations, features, verbosity)
 
-        while (len(rules) < max_length) and (not stop) and (self.status == 0):
+        while (len(rules) < max_length-1) and (not stop) and (self.status == 0):
         
             #print("Computing rule number ",len(rules))
             # Greedy choice for next rule
@@ -75,7 +74,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
             capt_indices_rules = [[] for i in range(len(current_rules))]
             utility = np.zeros(len(current_rules))
             idx = 0
-            sensitivity = 0.5 #dp.smooth_sensitivity_gini(len(X_remain),self.beta, min_supp = 1) 
+            sensitivity = 0.5 #dp.smooth_sensitivity_gini(len(X_remain),self.budget_per_node, min_supp = 1) 
             for i in range(len(current_rules)): # uses a copy of the full version as is before iterating as the list is then modified during iterations
                 # Check memory limit
                 a_rule = current_rules[i]
@@ -130,7 +129,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 
             else:
                 #print("Number of rules to sample from : ", len(utility))
-                best_idx = dp.exponential(self.beta, sensitivity, 1-utility)[0]
+                best_idx = dp.exponential(self.budget_per_node, sensitivity, 1-utility)[0]
                 best_rule, best_pred  = current_rules[int(info_rule[best_idx][0])], info_rule[best_idx][1]
                 best_rule_capt_indices = capt_indices_rules[best_idx][0]
 
@@ -161,22 +160,26 @@ class DPGreedyRLClassifier(CorelsClassifier):
                     cards.append([capt_labels_counts[1][0], 0])
                 else:
                     cards.append([0, capt_labels_counts[1][0]])
-            average_outcome_rule = np.mean(y_remain)
-            if average_outcome_rule < 0.5:
-                pred = 0
-            else:
-                pred = 1
+
+            pred_default = dp.exponential(self.budget_per_node, 1, cards[-1], disp = False)[0]
             rules.append([0])
-            preds.append(pred)
+            preds.append(pred_default)
         else: # No training data at all fall into the default prediction, then by default predict overall majority
-            average_outcome_rule = np.average(y)
-            if average_outcome_rule < 0.5:
-                pred = 0
+            capt_labels_counts = np.unique(y, return_counts=True)
+            card = []
+            if capt_labels_counts[0].size == 2:
+                card = capt_labels_counts[1]
             else:
-                pred = 1
+                if capt_labels_counts[0][0] == 0:
+                    card = [capt_labels_counts[1][0], 0]
+                else:
+                    card= [0, capt_labels_counts[1][0]]
+                    
+            pred_default = dp.exponential(self.budget_per_node, 1, card, disp = False)[0]
+
             cards.append([0,0])
             rules.append([0])
-            preds.append(pred)
+            preds.append(pred_default)
 
         # Post-processing step: remove useless rules that do no change the classification function (i.e. rules before the default decision with the same prediction)
         if perform_post_pruning:

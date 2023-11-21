@@ -96,7 +96,7 @@ def gaussian(epsilon, delta, sensitivity, n):
     return rng.normal(scale = c*sensitivity/epsilon, size = n)
 
    
-def exponential(epsilon, sensitivity, utility):
+def exponential(epsilon, sensitivity, utility, disp = False):
     """
     Implementation of the Exponential Mechanism.
     Return the index of the element sampled through exponential distribution according to the utility array.
@@ -106,6 +106,8 @@ def exponential(epsilon, sensitivity, utility):
     utility = np.float128(utility)  #to prevent overflows
     probs = np.exp(epsilon* utility/(2*sensitivity) )
     probs/= np.sum(probs)
+    
+    if disp : print(probs)
     
     return rng.choice(np.arange(0,n), size=1, p=None)
  	
