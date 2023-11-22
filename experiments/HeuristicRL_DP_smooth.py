@@ -121,7 +121,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
 
                     if len(y_remain) == len(rule_capt_indices[0]): #to avoid computing empty mean (numpy warning)
                         other_gini =0
-                     else :                         
+                    else :                         
                         average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
                         other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
                    
@@ -129,7 +129,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                         capt_gini = 0     
                     else :                   
                         average_outcome_rule = np.average(y_remain[rule_capt_indices]) #to know if more samples of label 0 or 1 are captured
-                        capt_gini = 0 (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
+                        capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                     rule_gini = capt_gini + other_gini
                     
                     
@@ -162,7 +162,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                 
             
         # default rule
-        count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, [])
+        count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, None)
         best_pred = DpSmoothGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
         cards.append([count0_noisy, count1_noisy])                   
         rules.append([0])
@@ -191,12 +191,16 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
             local_rule["train_labels"] = cards[i]
             local_rule["prediction"] = bool(preds[i])
             list_of_chosen_rules.append(local_rule)
-
+        
+        print(list_of_chosen_rules)
         self.rl_ = RuleList(rules=list_of_chosen_rules, features=features, prediction_name=prediction_name)
         if self.status == 0: # no memory or time limits reached during fitting
             self.status = -2
 
     def get_noisy_counts(self, y_remain, rule_capt_indices):
+    
+        if rule_capt_indices is None :
+            capt_labels_counts = np.unique(y_remain, return_counts=True)
         capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
         
         if capt_labels_counts[0].size == 2:                                    

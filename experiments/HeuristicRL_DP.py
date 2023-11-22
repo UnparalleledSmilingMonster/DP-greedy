@@ -94,29 +94,30 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 n_samples_remain = y_remain.size
                 n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                 # Minimum support check
-                if (n_samples_rule/n_samples) > 0:
-                    average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
-                    pred = 0 if average_outcome_rule < 0.5 else 1
-                    if len(y_remain) == len(rule_capt_indices[0]): #to avoid computing empty mean (numpy warning)
-                        other_gini =0
-                    else :                         
-                        average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
-                        other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
-                   
-                    #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
+                
+                if len(y_remain) == len(rule_capt_indices[0]): #to avoid computing empty mean (numpy warning)
+                    other_gini =0
+                else :                         
+                    average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
+                    other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
+               
+                if len(rule_capt_indices[0]) ==0 :
+                    capt_gini = 0     
+                else :                   
+                    average_outcome_rule = np.average(y_remain[rule_capt_indices]) #to know if more samples of label 0 or 1 are captured
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
-                    rule_gini = capt_gini + other_gini               
-                    #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
-                    if rule_gini > init_gini: #if the rule does not better the model drop it
-                        list_of_rules.remove(a_rule)
-                        
-                    else :
-                        info_rule[idx]= [i] #keep track of captured indexes and rule 
-                        capt_indices_rules[idx] = rule_capt_indices
-                        utility[idx] = rule_gini
-                        idx +=1  #only increment if rule is kept for the 'Rashomon'-like set
-                else:
-                    list_of_rules.remove(a_rule) # the rule does not catch anything
+                rule_gini = capt_gini + other_gini                
+               
+                #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
+                if rule_gini > init_gini: #if the rule does not better the model drop it
+                    list_of_rules.remove(a_rule)
+                    
+                else :
+                    info_rule[idx]= [i] #keep track of captured indexes and rule 
+                    capt_indices_rules[idx] = rule_capt_indices
+                    utility[idx] = rule_gini
+                    idx +=1  #only increment if rule is kept for the 'Rashomon'-like set
+
                 
 
                 
@@ -144,7 +145,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 
             
         # default rule
-        count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, [])
+        count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, None)
         best_pred = DPGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
         cards.append([count0_noisy, count1_noisy])                   
         rules.append([0])
@@ -182,6 +183,9 @@ class DPGreedyRLClassifier(CorelsClassifier):
             self.status = -2
 
     def get_noisy_counts(self, y_remain, rule_capt_indices):
+    
+        if rule_capt_indices is None :
+            capt_labels_counts = np.unique(y_remain, return_counts=True)
         capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
         
         if capt_labels_counts[0].size == 2:                                    

@@ -141,7 +141,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                 
             
         # default rule
-        count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, [])
+        count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, None)
         best_pred = DpNoiseGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
         cards.append([count0_noisy, count1_noisy])                   
         rules.append([0])
