@@ -65,12 +65,11 @@ class DPGreedyRLClassifier(CorelsClassifier):
             #print("Initial gini: ", best_gini)
             best_capt_gini = (1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2) # only used to compare in case of equality
             best_rule = -1
-            best_pred = -1
             best_rule_capt_indices = -1
             
             
             current_rules = list_of_rules.copy()
-            info_rule = np.zeros((len(current_rules),2))
+            info_rule = np.zeros((len(current_rules),1))
             capt_indices_rules = [[] for i in range(len(current_rules))]
             utility = np.zeros(len(current_rules))
             idx = 0
@@ -98,7 +97,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 if (n_samples_rule/n_samples) > 0:
                     average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
                     pred = 0 if average_outcome_rule < 0.5 else 1
-                    if len(np.delete(y_remain, rule_capt_indices)) == 0: #to avoid computing empty mean (numpy warning)
+                    if len(y_remain) == len(rule_capt_indices[0]): #to avoid computing empty mean (numpy warning)
                         other_gini =0
                     else :                         
                         average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
@@ -112,7 +111,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
                         list_of_rules.remove(a_rule)
                         
                     else :
-                        info_rule[idx]= [i, pred] #keep track of captured indexes and rule 
+                        info_rule[idx]= [i] #keep track of captured indexes and rule 
                         capt_indices_rules[idx] = rule_capt_indices
                         utility[idx] = rule_gini
                         idx +=1  #only increment if rule is kept for the 'Rashomon'-like set
@@ -128,58 +127,31 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 stop = True 
                 
             else:
-                #print("Number of rules to sample from : ", len(utility))
+               #print("Number of rules to sample from : ", len(utility))
                 best_idx = dp.exponential(self.budget_per_node, sensitivity, 1-utility)[0]
-                best_rule, best_pred  = current_rules[int(info_rule[best_idx][0])], info_rule[best_idx][1]
-                best_rule_capt_indices = capt_indices_rules[best_idx][0]
-
-                
+                best_rule = current_rules[int(info_rule[best_idx][0])]
+                best_rule_capt_indices = capt_indices_rules[best_idx][0]            
+            
+                count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, best_rule_capt_indices)
+                best_pred = DPGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
+                cards.append([count0_noisy, count1_noisy])                   
                 rules.append(best_rule)
-                preds.append(best_pred)
-
-                capt_labels_counts = np.unique(y_remain[best_rule_capt_indices], return_counts=True)
-                if capt_labels_counts[0].size == 2:
-                    cards.append(capt_labels_counts[1])
-                else:
-                    if capt_labels_counts[0][0] == 0:
-                        cards.append([capt_labels_counts[1][0], 0])
-                    else:
-                        cards.append([0, capt_labels_counts[1][0]])
+                preds.append(best_pred)              
                 X_remain = np.delete(X_remain, best_rule_capt_indices, axis=0)
                 y_remain = np.delete(y_remain, best_rule_capt_indices)
                 list_of_rules.remove(best_rule)
-                if(len(X_remain) < min_support) : stop = True
+              
+                
             
         # default rule
-        if y_remain.size > 0:
-            capt_labels_counts = np.unique(y_remain, return_counts=True)
-            if capt_labels_counts[0].size == 2:
-                cards.append(capt_labels_counts[1])
-            else:
-                if capt_labels_counts[0][0] == 0:
-                    cards.append([capt_labels_counts[1][0], 0])
-                else:
-                    cards.append([0, capt_labels_counts[1][0]])
+        count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, [])
+        best_pred = DPGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
+        cards.append([count0_noisy, count1_noisy])                   
+        rules.append([0])
+        preds.append(best_pred)              
 
-            pred_default = dp.exponential(self.budget_per_node, 1, cards[-1], disp = False)[0]
-            rules.append([0])
-            preds.append(pred_default)
-        else: # No training data at all fall into the default prediction, then by default predict overall majority
-            capt_labels_counts = np.unique(y, return_counts=True)
-            card = []
-            if capt_labels_counts[0].size == 2:
-                card = capt_labels_counts[1]
-            else:
-                if capt_labels_counts[0][0] == 0:
-                    card = [capt_labels_counts[1][0], 0]
-                else:
-                    card= [0, capt_labels_counts[1][0]]
-                    
-            pred_default = dp.exponential(self.budget_per_node, 1, card, disp = False)[0]
-
-            cards.append([0,0])
-            rules.append([0])
-            preds.append(pred_default)
+             
+       
 
         # Post-processing step: remove useless rules that do no change the classification function (i.e. rules before the default decision with the same prediction)
         if perform_post_pruning:
@@ -209,6 +181,35 @@ class DPGreedyRLClassifier(CorelsClassifier):
         if self.status == 0: # no memory or time limits reached during fitting
             self.status = -2
 
+    def get_noisy_counts(self, y_remain, rule_capt_indices):
+        capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
+        
+        if capt_labels_counts[0].size == 2:                                    
+            capt_labels_0 = capt_labels_counts[1][0]
+            capt_labels_1 = capt_labels_counts[1][1]        
+        elif len(capt_labels_counts[0]) == 0 :
+            capt_labels_0 = 0
+            capt_labels_1 = 0
+            
+        else:
+            if capt_labels_counts[0][0] == 0:
+                capt_labels_0 = capt_labels_counts[1][0]
+                capt_labels_1 = 0
+                
+            else:
+                capt_labels_0 = 0
+                capt_labels_1 = capt_labels_counts[1][1]
+        
+        capt_labels_0 += dp.laplace(self.budget_per_node, 1, 1)[0]
+        capt_labels_1 += dp.laplace(self.budget_per_node, 1, 1)[0]
+        
+        return capt_labels_0, capt_labels_1
+        
+    @staticmethod
+    def best_pred(count0, count1):
+        return 0 if count0 >= count1 else 1 
+        
+        
     def __str__(self):
         s = "DPGreedyRLClassifier (" + str(self.get_params()) + ")"
 

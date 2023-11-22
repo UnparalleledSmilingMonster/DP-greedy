@@ -93,7 +93,6 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                 
                 best_capt_gini = (1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2) # only used to compare in case of equality
                 best_rule = -1
-                best_pred = -1
                 best_rule_capt_indices = -1
             
                 current_rules = list_of_rules.copy()
@@ -142,7 +141,6 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                             best_gini = rule_gini
                             best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
                             best_rule = a_rule
-                            best_pred = pred
                             best_rule_capt_indices = rule_capt_indices
                     else:
                         list_of_rules.remove(a_rule) # the rule won't satisfy min. support anymore
@@ -150,52 +148,23 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                 if best_rule == -1: # no rule OK found
                     stop = True 
                 else:
+                    count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, best_rule_capt_indices)
+                    best_pred = DpSmoothGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
+                    cards.append([count0_noisy, count1_noisy])                   
                     rules.append(best_rule)
-                    preds.append(best_pred)
-
-                    capt_labels_counts = np.unique(y_remain[best_rule_capt_indices], return_counts=True)
-                    if capt_labels_counts[0].size == 2:
-                        cards.append(capt_labels_counts[1])
-                    else:
-                        if capt_labels_counts[0][0] == 0:
-                            cards.append([capt_labels_counts[1][0], 0])
-                        else:
-                            cards.append([0, capt_labels_counts[1][0]])
-                    X_remain = np.delete(X_remain, best_rule_capt_indices, axis=0) #to be DP: this should be done in the database
+                    preds.append(best_pred)              
+                    X_remain = np.delete(X_remain, best_rule_capt_indices, axis=0)
                     y_remain = np.delete(y_remain, best_rule_capt_indices)
                     list_of_rules.remove(best_rule)
+                  
                 
             
         # default rule
-        if y_remain.size > 0:
-            capt_labels_counts = np.unique(y_remain, return_counts=True)
-            if capt_labels_counts[0].size == 2:
-                cards.append(capt_labels_counts[1])
-            else:
-                if capt_labels_counts[0][0] == 0:
-                    cards.append([capt_labels_counts[1][0], 0])
-                else:
-                    cards.append([0, capt_labels_counts[1][0]])
-
-            pred_default = dp.exponential(self.budget_per_node, 1, cards[-1], disp = False)[0]
-            rules.append([0])
-            preds.append(pred_default)
-        else: # No training data at all fall into the default prediction, then by default predict overall majority
-            capt_labels_counts = np.unique(y, return_counts=True)
-            card = []
-            if capt_labels_counts[0].size == 2:
-                card = capt_labels_counts[1]
-            else:
-                if capt_labels_counts[0][0] == 0:
-                    card = [capt_labels_counts[1][0], 0]
-                else:
-                    card= [0, capt_labels_counts[1][0]]
-                    
-            pred_default = dp.exponential(self.budget_per_node, 1, card, disp = False)[0]
-
-            cards.append([0,0])
-            rules.append([0])
-            preds.append(pred_default)
+        count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, [])
+        best_pred = DpSmoothGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
+        cards.append([count0_noisy, count1_noisy])                   
+        rules.append([0])
+        preds.append(best_pred)              
 
         # Post-processing step: remove useless rules that do no change the classification function (i.e. rules before the default decision with the same prediction)
         if perform_post_pruning:
@@ -225,6 +194,34 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         if self.status == 0: # no memory or time limits reached during fitting
             self.status = -2
 
+    def get_noisy_counts(self, y_remain, rule_capt_indices):
+        capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
+        
+        if capt_labels_counts[0].size == 2:                                    
+            capt_labels_0 = capt_labels_counts[1][0]
+            capt_labels_1 = capt_labels_counts[1][1]        
+        elif len(capt_labels_counts[0]) == 0 :
+            capt_labels_0 = 0
+            capt_labels_1 = 0
+            
+        else:
+            if capt_labels_counts[0][0] == 0:
+                capt_labels_0 = capt_labels_counts[1][0]
+                capt_labels_1 = 0
+                
+            else:
+                capt_labels_0 = 0
+                capt_labels_1 = capt_labels_counts[1][1]
+        
+        capt_labels_0 += dp.laplace(self.budget_per_node, 1, 1)[0]
+        capt_labels_1 += dp.laplace(self.budget_per_node, 1, 1)[0]
+        
+        return capt_labels_0, capt_labels_1
+        
+    @staticmethod
+    def best_pred(count0, count1):
+        return 0 if count0 >= count1 else 1 
+        
     def __str__(self):
         s = "DP with Smooth Sensitivity GreedyRLClassifier (" + str(self.get_params()) + ")"
 
