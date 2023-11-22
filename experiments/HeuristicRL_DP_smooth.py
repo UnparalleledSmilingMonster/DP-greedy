@@ -117,34 +117,36 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                     n_samples_remain = y_remain.size
                     n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                     # Minimum support check
-                    if (n_samples_rule/n_samples) > 0:
-                        average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
-                        pred = 0 if average_outcome_rule < 0.5 else 1
-                        if len(np.delete(y_remain, rule_capt_indices)) == 0: #to avoid computing empty mean (numpy warning)
-                            other_gini =0
-                        else :                         
-                            average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
-                            other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
-                       
-                        #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
-                        capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
-                        rule_gini = capt_gini + other_gini
-                        if self.noise == "Cauchy":
-                            rule_gini += dp.cauchy_smooth(self.beta, self.gamma, smooth_sensitivity) #noisy version
-                        else : 
-                            rule_gini += dp.laplace_smooth(self.budget_per_node, smooth_sensitivity) #noisy version
-                        #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
-                        if (rule_gini < best_gini) or \
-                            ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
-                            #print("-> new gini: ", rule_gini)
-                            #best_different_from_default = is_different_from_default # not used for now
-                            best_gini = rule_gini
-                            best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
-                            best_rule = a_rule
-                            best_rule_capt_indices = rule_capt_indices
-                    else:
-                        list_of_rules.remove(a_rule) # the rule won't satisfy min. support anymore
 
+
+                    if len(y_remain) == len(rule_capt_indices[0]): #to avoid computing empty mean (numpy warning)
+                        other_gini =0
+                     else :                         
+                        average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
+                        other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
+                   
+                    if len(rule_capt_indices[0]) ==0 :
+                        capt_gini = 0     
+                    else :                   
+                        average_outcome_rule = np.average(y_remain[rule_capt_indices]) #to know if more samples of label 0 or 1 are captured
+                        capt_gini = 0 (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
+                    rule_gini = capt_gini + other_gini
+                    
+                    
+                    if self.noise == "Cauchy":
+                        rule_gini += dp.cauchy_smooth(self.beta, self.gamma, smooth_sensitivity) #noisy version
+                    else : 
+                        rule_gini += dp.laplace_smooth(self.budget_per_node, smooth_sensitivity) #noisy version
+                    #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
+                    if (rule_gini < best_gini) or \
+                        ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
+                        #print("-> new gini: ", rule_gini)
+                        #best_different_from_default = is_different_from_default # not used for now
+                        best_gini = rule_gini
+                        best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
+                        best_rule = a_rule
+                        best_rule_capt_indices = rule_capt_indices
+                        
                 if best_rule == -1: # no rule OK found
                     stop = True 
                 else:
