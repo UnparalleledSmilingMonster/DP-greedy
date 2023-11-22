@@ -129,7 +129,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                        
                         #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
                         capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
-                        rule_gini = capt_gini #+ other_gini
+                        rule_gini = capt_gini + other_gini
                         if self.noise == "Cauchy":
                             rule_gini += dp.cauchy_smooth(self.beta, self.gamma, smooth_sensitivity) #noisy version
                         else : 

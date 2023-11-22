@@ -111,7 +111,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                    
                     #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
-                    rule_gini = capt_gini #+ other_gini
+                    rule_gini = capt_gini + other_gini
                     if self.noise == "Gaussian":
                         rule_gini += dp.gaussian(self.budget_per_node, self.delta, self.sensitivity, 1)[0] #noisy version
                     else : 
