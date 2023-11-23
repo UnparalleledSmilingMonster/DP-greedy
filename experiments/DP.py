@@ -201,10 +201,14 @@ def clean_dataset(X,features, biases):
     
 
 def get_biases(dataset):
-    return unbias_compas if dataset=="compas" else unbias_adult
+    if dataset=="compas" : return unbias_compas
+    elif dataset == "adult": return unbias_adult
+    elif dataset == "folktable" : return unbias_folktable
     
+    else : return None
     
 unbias_compas=["Race", "Age", "Gender"]
 unbias_adult = ["gender", "age"]
+unbias_folktable = ["RAC1P", "SEX", "POBP", "OCCP", "AGEP"] #pobp = place of birth | occp : occupation, seems more specific than cow = class of worker
 
 

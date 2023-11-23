@@ -217,7 +217,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                 
             else:
                 capt_labels_0 = 0
-                capt_labels_1 = capt_labels_counts[1][1]
+                capt_labels_1 = capt_labels_counts[1][0]
         
         capt_labels_0 += dp.laplace(self.budget_per_node, 1, 1)[0]
         capt_labels_1 += dp.laplace(self.budget_per_node, 1, 1)[0]

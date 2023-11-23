@@ -5,15 +5,15 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-dataset = "compas"
-min_support = 0.18
-max_length = 5
+dataset = "folktable"
+min_support = 0.05
+max_length = 10
 max_card = 2
 epsilon = 1
 compute_exact = False
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
-N_runs = 10
+N_runs = 1
 
 X_unbias,features_unbias = dp.clean_dataset(X,features, dp.get_biases(dataset))
 print(list(set(features)-set(features_unbias)))
