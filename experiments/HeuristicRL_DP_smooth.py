@@ -20,7 +20,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.noise = noise
-        self.budget_per_node = self.epsilon / (2*self.max_length)
+        self.budget_per_node = self.epsilon / (2*self.max_length-1)
         self.confidence = confidence
         
         self.threshold = dp.confidence_interval_laplace(self.budget_per_node, self.confidence)
@@ -29,7 +29,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         
         if self.noise == "Cauchy":
             self.gamma = 2
-            self.beta = self.budget_per_node/(2*(self.gamma+1))
+            self.beta = self.budget_per_node/(2*(self.gamma+1)*(2*self.max_length-1))
             self.delta =0  #pure DP with Cauchy Noise
             
         

@@ -20,7 +20,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.noise = noise
-        self.budget_per_node = self.epsilon / (2*self.max_length)
+        self.budget_per_node = self.epsilon / (2*self.max_length-1) #TODO:may need a fix 
         self.sensitivity = 0.5 #In dimension 1, all norms are equal
         
         if self.noise == "Laplace":
@@ -55,7 +55,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         min_supp_N = np.floor(self.min_support * n_samples)
         
         if self.noise == "Gaussian":
-            if (self.delta is None or self.delta == "None") : self.delta = 1/ n_samples**2 	#set delta to polynomial if not set
+            if (self.delta is None or self.delta == "None") : self.delta = 1/ (n_samples**2 * (2*self.max_length-1))	#set delta to polynomial if not set
             
         #print("DP aimed : ({0},{1})".format(self.epsilon, self.delta))       
         
@@ -70,14 +70,21 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         while (len(rules) < max_length-1) and (not stop) and (self.status == 0):
             #print("Computing rule number ",len(rules))
             # Greedy choice for next rule
-            average_outcome_remaining = 0 if len(y_remain)==0 else np.average(y_remain)
+            
+
+            count0_full, count1_full = self.get_noisy_counts(y_remain, None)     
+            average_outcome_remaining = count1_full/(count0_full+count1_full)
             best_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added
             #print("Initial gini: ", best_gini)
             best_capt_gini = (1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2) # only used to compare in case of equality
             best_rule = -1
             best_rule_capt_indices = -1
+            best_pred=-1
+            best_count0 = -1
+            best_count1 = -1
             
             current_rules = list_of_rules.copy()
+            X_remain_noisy = len(X_remain) + dp.laplace(self.budget_per_node,1,1)[0]
             
             for i in range(len(current_rules)): # uses a copy of the full version as is before iterating as the list is then modified during iterations      
                 a_rule = current_rules[i]
@@ -94,45 +101,41 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                         self.status = 4
                         break
 
-                rule_capt_indices = rule_indices(a_rule, X_remain) #np.where(X_remain[:,a_rule] == 1)
-                n_samples_rule = rule_capt_indices[0].size  #number of samples captured by the rule
-                n_samples_remain = y_remain.size
-                n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
+                rule_capt_indices = rule_indices(a_rule, X_remain) #np.where(X_remain[:,a_rule] == 1)                
+                count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, rule_capt_indices)                
+                pred = DpNoiseGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
+                count0_noisy_other, count1_noisy_other= count0_full - count0_noisy, count1_full - count0_full
                 
-                # Minimum support check
-                if (n_samples_rule/n_samples) > 0:
-                    average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
-                    if len(rule_capt_indices[0]) == len(y_remain): #to avoid computing empty mean (numpy warning)
-                        other_gini =0
-                    else :                         
-                        average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
-                        other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
-                   
-                    #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
-                    capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
-                    rule_gini = capt_gini + other_gini
-                    if self.noise == "Gaussian":
-                        rule_gini += dp.gaussian(self.budget_per_node, self.delta, self.sensitivity, 1)[0] #noisy version
-                    else : 
-                        rule_gini += dp.laplace(self.budget_per_node, self.sensitivity, 1)[0] #noisy version
-                    
-                    if (rule_gini < best_gini) or \
-                        ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
-                        #print("-> new gini: ", rule_gini)
-                        #best_different_from_default = is_different_from_default # not used for now
-                        best_gini = rule_gini
-                        best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
-                        best_rule = a_rule                        
-                        best_rule_capt_indices = rule_capt_indices
-                else:
-                    list_of_rules.remove(a_rule) # the rule does not catch anything
+                n_samples_rule = count0_noisy + count1_noisy  #number of samples captured by the rule
+                n_samples_other = count0_noisy_other + count1_noisy_other #number of samples not captured yet
+                n_samples_remain = X_remain_noisy
+
+                
+                average_outcome_rule = count1_noisy/n_samples_rule
+                average_outcome_other = count1_noisy_other/n_samples_other
+                other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
+           
+                #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
+                capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
+                rule_gini = capt_gini + other_gini
+                
+                if (rule_gini < best_gini) or \
+                    ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
+                    #print("-> new gini: ", rule_gini)
+                    #best_different_from_default = is_different_from_default # not used for now
+                    best_gini = rule_gini
+                    best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
+                    best_rule = a_rule                        
+                    best_rule_capt_indices = rule_capt_indices
+                    best_pred = pred
+                    best_count0 = count0_noisy
+                    best_count1 = count1_noisy
+            
 
             if best_rule == -1: # no rule OK found
                 stop = True 
             else:            
-                count0_noisy, count1_noisy = self.get_noisy_counts(y_remain, best_rule_capt_indices)
-                best_pred = DpNoiseGreedyRLClassifier.best_pred(count0_noisy, count1_noisy)
-                cards.append([count0_noisy, count1_noisy])                   
+                cards.append([best_count0, best_count1])                   
                 rules.append(best_rule)
                 preds.append(best_pred)              
                 X_remain = np.delete(X_remain, best_rule_capt_indices, axis=0)
@@ -199,8 +202,13 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                 capt_labels_0 = 0
                 capt_labels_1 = capt_labels_counts[1][0]
         
-        capt_labels_0 += dp.laplace(self.budget_per_node, 1, 1)[0]
-        capt_labels_1 += dp.laplace(self.budget_per_node, 1, 1)[0]
+        if self.noise=="Laplace":
+            capt_labels_0 += dp.laplace(self.budget_per_node, 1, 1)[0]
+            capt_labels_1 += dp.laplace(self.budget_per_node, 1, 1)[0]
+        
+        else:
+            capt_labels_0 += dp.gaussian(self.budget_per_node, self.delta, 1, 1)[0]
+            capt_labels_1 += dp.gaussian(self.budget_per_node, self.delta, 1, 1)[0]     
         
         return capt_labels_0, capt_labels_1
         
