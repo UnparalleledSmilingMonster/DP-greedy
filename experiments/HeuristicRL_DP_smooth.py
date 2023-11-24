@@ -192,7 +192,6 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
             local_rule["prediction"] = bool(preds[i])
             list_of_chosen_rules.append(local_rule)
         
-        print(list_of_chosen_rules)
         self.rl_ = RuleList(rules=list_of_chosen_rules, features=features, prediction_name=prediction_name)
         if self.status == 0: # no memory or time limits reached during fitting
             self.status = -2
@@ -230,8 +229,9 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         
     def __str__(self):
         s = "DP with Smooth Sensitivity GreedyRLClassifier (" + str(self.get_params()) + ")"
+       
 
-        if hasattr(self, "rl_"):
+        if hasattr(self, "rl_"):        
             s += "\n" + self.rl_.__str__()
 
         return s
