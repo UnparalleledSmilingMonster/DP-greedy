@@ -175,6 +175,32 @@ class GreedyRLClassifier(CorelsClassifier):
         if self.status == 0: # no memory or time limits reached during fitting
             self.status = -2
 
+    def distributional_overfit(self, X_train,  X_test):
+        import matplotlib.pyplot as plt
+        classes = [0,1]
+        
+        Y_train_hat = self.get_rule_per_sample(X_train)
+        Y_test_hat = self.get_rule_per_sample(X_test)      
+        plt.hist(Y_train_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.6, label = "Training data")
+        plt.hist(Y_test_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.6, label = "Test data")
+        plt.legend()
+        ticks = range(0, len(self.rl_.rules))
+        plt.xticks(ticks)
+
+        plt.show()
+    
+    
+    def get_rule_per_sample(self, X):
+        rules = self.rl_.rules
+        arr = -np.ones(len(X))
+        for i in range(len(rules)-1):
+            rule_capt_indices = rule_indices(rules[i]["antecedents"],X)
+            for capt in rule_capt_indices[0]:
+                if arr[capt] == -1 : arr[capt] =  i
+        
+        return np.where(arr==-1, len(rules)-1, arr)  
+        
+        
     def __str__(self):
         s = "GreedyRLClassifier (" + str(self.get_params()) + ")"
 

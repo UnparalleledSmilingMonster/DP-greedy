@@ -27,6 +27,8 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         
         dp.set_seed(seed)
         
+        self.true_cards=[] #used for distributional overfitting computation : NOT DP (not meant for release, at all)!
+        
         if self.noise == "Cauchy":
             self.gamma = 2
             self.beta = self.budget_per_node/(2*(self.gamma+1)*(2*self.max_length-1))
@@ -196,8 +198,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         if self.status == 0: # no memory or time limits reached during fitting
             self.status = -2
 
-    def get_noisy_counts(self, y_remain, rule_capt_indices):
-    
+    def get_noisy_counts(self, y_remain, rule_capt_indices):    
         if rule_capt_indices is None :
             capt_labels_counts = np.unique(y_remain, return_counts=True)
         capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
@@ -218,6 +219,8 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
                 capt_labels_0 = 0
                 capt_labels_1 = capt_labels_counts[1][0]
         
+        self.true_cards.append([capt_labels_0, capt_labels_1])
+        
         capt_labels_0 += dp.laplace(self.budget_per_node, 1, 1)[0]
         capt_labels_1 += dp.laplace(self.budget_per_node, 1, 1)[0]
         
@@ -235,7 +238,34 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
             s += "\n" + self.rl_.__str__()
 
         return s
+    
+    def distributional_overfit(self, X_train,  X_test):
+        import matplotlib.pyplot as plt
+        classes = [0,1]
+        
+        Y_train_hat = self.get_rule_per_sample(X_train)
+        Y_test_hat = self.get_rule_per_sample(X_test)      
+        plt.hist(Y_train_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.6, label = "Training data")
+        plt.hist(Y_test_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.6, label = "Test data")
+        plt.legend()
+        ticks = range(0, len(self.rl_.rules))
+        plt.xticks(ticks)
 
+        plt.show()
+    
+    
+    def get_rule_per_sample(self, X):
+        rules = self.rl_.rules
+        arr = -np.ones(len(X))
+        for i in range(len(rules)-1):
+            rule_capt_indices = rule_indices(rules[i]["antecedents"],X)
+            for capt in rule_capt_indices[0]:
+                if arr[capt] == -1 : arr[capt] =  i
+        
+        return np.where(arr==-1, len(rules)-1, arr)        
+        
+        
+        
     def get_status(self): 
         status = self.status 
         if status == 0:
