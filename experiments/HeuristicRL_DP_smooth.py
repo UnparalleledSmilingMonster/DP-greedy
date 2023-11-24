@@ -21,7 +21,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         self.delta = delta
         self.noise = noise
         self.budget_per_node = self.epsilon / (2*self.max_length)
-        self.confidence = 0.98
+        self.confidence = confidence
         
         self.threshold = dp.confidence_interval_laplace(self.budget_per_node, self.confidence)
         
@@ -265,5 +265,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
             "max_card": self.max_card,
             "min_support": self.min_support,
             "max_length": self.max_length,
-            "allow_negations": self.allow_negations
+            "allow_negations": self.allow_negations,
+            "epsilon": self.epsilon,
+            "delta": self.delta
         }

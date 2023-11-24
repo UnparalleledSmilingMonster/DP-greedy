@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import integrate, optimize
+import time
 
 beta_1 = 3-2*np.sqrt(2)
 beta_2 = 3+2*np.sqrt(2)
@@ -212,3 +213,14 @@ unbias_adult = ["gender", "age"]
 unbias_folktable = ["RAC1P", "SEX", "POBP", "OCCP", "AGEP"] #pobp = place of birth | occp : occupation, seems more specific than cow = class of worker
 
 
+def split_dataset(X, y, split, seed):
+    start= time.time()
+    set_seed(seed)
+    N = len(X)
+    split = int(N*split)
+    perm = rng.permutation(N)
+    X,y = X[perm], y[perm]    
+    return X[:split], y[:split], X[split:], y[split:]       
+        
+        
+        

@@ -4,7 +4,7 @@ import json
 
 
 """
-dic_format = {'dataset':0, 'max_length':1, 'Mechanism':2, epsilon_letter:3, delta_letter:4, lambda_letter:5, "Confidence":6, 'C_max':7, 'N':8, 'Runs':9, 'Avg. Time(s)':10, 'Accuracy':11}
+dic_format = {'dataset':0, 'max_length':1, 'Mechanism':2, epsilon_letter:3, delta_letter:4, lambda_letter:5, 'N':6, 'Runs':7, 'Avg. Time(s)':8, 'Accuracy_train':9, 'Accuracy_test':10}
 """
 
 def pformat(var, mode ="f", num=3 ):
@@ -89,27 +89,26 @@ def GreedyRLParser(directory):
                 line = file.readline() #we only read the first line as the rest is warnings
                 #print(line)
                 data = ast.literal_eval(line)
-                key = "".join(str(data[0:8])) #primary key (not accounting for the seed = repetition)
+                key = "".join(str(data[0:7])) #primary key (not accounting for the seed = repetition)
                 
                 if key in res :
-                    res[key][9] += 1
-                    res[key][10] += float(data[-2])  #time 
+                    res[key][8] += 1
+                    res[key][9] += float(data[-3])  #time 
+                    res[key][10] += float(data[-2])  #accuracy
                     res[key][11] += float(data[-1])  #accuracy
                 else :
-                    res[key] = data[0:9]
-                    if res[key][2].startswith(if __name__ == '__main__':    
-    epsilon_letter='\u03B5'
-    delta_letter='\u03B4'
-    lambda_letter = '\u03BB'
-    params = ['dataset', 'Mechanism', epsilon_letter, delta_letter, lambda_letter, "Confidence", 'C_max', 'N', 'Runs', 'Avg. Time(s)', 'Accuracy']"smooth"): res[key][2] = res[key][2].replace("smooth", "sm")
+                    res[key] = data[0:7]
+                    if res[key][2].startswith("smooth"): res[key][2] = res[key][2].replace("smooth", "sm")
                     elif res[key][2].startswith("global"):res[key][2] = res[key][2].replace("global", "gl")
                     res[key].append(1)
-                    res[key].append(float(data[-2]))  #time 
-                    res[key].append(float(data[-1])) 
+                    res[key].append(float(data[-3]))  #time 
+                    res[key].append(float(data[-2]))  #train acc 
+                    res[key].append(float(data[-1]))  #test acc
                     
         for key in res :
-            res[key][10] = float(pformat(res[key][10]/res[key][9], num=2))
-            res[key][11] = float(pformat(res[key][11]/res[key][9]))  
+            res[key][9] = float(pformat(res[key][8]/res[key][7], num=2))  
+            res[key][10] = float(pformat(res[key][9]/res[key][7]))
+            res[key][11] = float(pformat(res[key][10]/res[key][7]))  
             
         with open("summary.nfo", "w") as summary:
              summary.write(json.dumps(res)) 
@@ -127,7 +126,7 @@ if __name__ == '__main__':
     epsilon_letter='\u03B5'
     delta_letter='\u03B4'
     lambda_letter = '\u03BB'
-    params = ['dataset', 'Mechanism', epsilon_letter, delta_letter, lambda_letter, "Confidence", 'C_max', 'N', 'Runs', 'Avg. Time(s)', 'Accuracy']
+    params = ['dataset', 'Mechanism', epsilon_letter, delta_letter, lambda_letter, 'N', 'Runs', 'Avg. Time(s)', 'Train_acc', 'Test_acc']
 
     res = GreedyRLParser("results")
     latex_tabular("tex/results.tex", params, res)

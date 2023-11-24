@@ -247,5 +247,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
             "max_card": self.max_card,
             "min_support": self.min_support,
             "max_length": self.max_length,
-            "allow_negations": self.allow_negations
+            "allow_negations": self.allow_negations,
+            "epsilon": self.epsilon,
+            "delta": self.delta
         }
