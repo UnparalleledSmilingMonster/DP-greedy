@@ -21,7 +21,7 @@ def highlight(L, dic):
     datasets = set([dic[key][0] for key in dic])
     max_lengths = set([dic[key][1] for key in dic])
     epsilons = set([dic[key][3] for key in dic])
-    epsilons.remove('x')
+    #epsilons.remove('x')
     
     for i in range(len(L)):
         L[i].append(True if L[i][2] == "vanilla" else False)
@@ -92,10 +92,10 @@ def GreedyRLParser(directory):
                 key = "".join(str(data[0:7])) #primary key (not accounting for the seed = repetition)
                 
                 if key in res :
-                    res[key][8] += 1
-                    res[key][9] += float(data[-3])  #time 
-                    res[key][10] += float(data[-2])  #accuracy
-                    res[key][11] += float(data[-1])  #accuracy
+                    res[key][7] += 1
+                    res[key][8] += float(data[-3])  #time 
+                    res[key][9] += float(data[-2])  #accuracy
+                    res[key][10] += float(data[-1])  #accuracy
                 else :
                     res[key] = data[0:7]
                     if res[key][2].startswith("smooth"): res[key][2] = res[key][2].replace("smooth", "sm")
@@ -106,9 +106,9 @@ def GreedyRLParser(directory):
                     res[key].append(float(data[-1]))  #test acc
                     
         for key in res :
-            res[key][9] = float(pformat(res[key][8]/res[key][7], num=2))  
-            res[key][10] = float(pformat(res[key][9]/res[key][7]))
-            res[key][11] = float(pformat(res[key][10]/res[key][7]))  
+            res[key][8] = float(pformat(res[key][8]/res[key][7], num=2))  
+            res[key][9] = float(pformat(res[key][9]/res[key][7]))
+            res[key][10] = float(pformat(res[key][10]/res[key][7]))  
             
         with open("summary.nfo", "w") as summary:
              summary.write(json.dumps(res)) 

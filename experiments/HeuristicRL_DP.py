@@ -60,7 +60,7 @@ class DPGreedyRLClassifier(CorelsClassifier):
         
             #print("Computing rule number ",len(rules))
             # Greedy choice for next rule
-            average_outcome_remaining = np.average(y_remain)
+            average_outcome_remaining = 0 if len(y_remain) == 0 else np.average(y_remain)
             init_gini =  1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2 # value if no rule is added
             #print("Initial gini: ", best_gini)
             best_capt_gini = (1 - (average_outcome_remaining)**2 - (1 - average_outcome_remaining)**2) # only used to compare in case of equality
