@@ -20,7 +20,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.noise = noise
-        self.budget_per_node = self.epsilon / (2*self.max_length)
+        self.budget_per_node = self.epsilon / (2*self.max_length -1)
         self.sensitivity = 0.5 #In dimension 1, all norms are equal
         
         if self.noise == "Laplace":
@@ -55,7 +55,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         min_supp_N = np.floor(self.min_support * n_samples)
         
         if self.noise == "Gaussian":
-            if (self.delta is None or self.delta == "None") : self.delta = 1/ n_samples**2 	#set delta to polynomial if not set
+            if (self.delta is None or self.delta == "None") : self.delta = 1/ (n_samples**2 *(2*self.max_length-1))	#set delta to polynomial if not set
             
         #print("DP aimed : ({0},{1})".format(self.epsilon, self.delta))       
         
@@ -100,32 +100,31 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                 n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                 
                 # Minimum support check
-                if (n_samples_rule/n_samples) > 0:
-                    average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
-                    if len(rule_capt_indices[0]) == len(y_remain): #to avoid computing empty mean (numpy warning)
-                        other_gini =0
-                    else :                         
-                        average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
-                        other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
-                   
-                    #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
-                    capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
-                    rule_gini = capt_gini + other_gini
-                    if self.noise == "Gaussian":
-                        rule_gini += dp.gaussian(self.budget_per_node, self.delta, self.sensitivity, 1)[0] #noisy version
-                    else : 
-                        rule_gini += dp.laplace(self.budget_per_node, self.sensitivity, 1)[0] #noisy version
-                    
-                    if (rule_gini < best_gini) or \
-                        ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
-                        #print("-> new gini: ", rule_gini)
-                        #best_different_from_default = is_different_from_default # not used for now
-                        best_gini = rule_gini
-                        best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
-                        best_rule = a_rule                        
-                        best_rule_capt_indices = rule_capt_indices
-                else:
-                    list_of_rules.remove(a_rule) # the rule does not catch anything
+
+                average_outcome_rule = 0 if len(rule_capt_indices[0])==0 else np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
+                if len(rule_capt_indices[0]) == len(y_remain): #to avoid computing empty mean (numpy warning)
+                    other_gini =0
+                else :                         
+                    average_outcome_other = np.average(np.delete(y_remain, rule_capt_indices))
+                    other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
+               
+                #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
+                capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
+                rule_gini = capt_gini + other_gini
+                if self.noise == "Gaussian":
+                    rule_gini += dp.gaussian(self.budget_per_node, self.delta, self.sensitivity, 1)[0] #noisy version
+                else : 
+                    rule_gini += dp.laplace(self.budget_per_node, self.sensitivity, 1)[0] #noisy version
+                
+                if (rule_gini < best_gini) or \
+                    ((rule_gini == best_gini) and (capt_gini < best_capt_gini)):
+                    #print("-> new gini: ", rule_gini)
+                    #best_different_from_default = is_different_from_default # not used for now
+                    best_gini = rule_gini
+                    best_capt_gini = capt_gini # used to select the best "side of the split" (most accurate rule if two splits allows the same children-summed gini impurity reduction)
+                    best_rule = a_rule                        
+                    best_rule_capt_indices = rule_capt_indices
+
 
             if best_rule == -1: # no rule OK found
                 stop = True 
