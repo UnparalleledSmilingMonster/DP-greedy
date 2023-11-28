@@ -20,7 +20,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.noise = noise
-        self.budget_per_node = self.epsilon / (2*self.max_length-1) #TODO:may need a fix 
+        self.budget_per_node = self.epsilon / (self.max_length-1) #TODO:may need a fix 
         self.sensitivity = 0.5 #In dimension 1, all norms are equal
         
         if self.noise == "Laplace":
@@ -54,8 +54,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         n_features = X.shape[1]
         min_supp_N = np.floor(self.min_support * n_samples)
         
-        if self.noise == "Gaussian":
-            if (self.delta is None or self.delta == "None") : self.delta = 1/ (n_samples**2 * (2*self.max_length-1))	#set delta to polynomial if not set
+        
             
         #print("DP aimed : ({0},{1})".format(self.epsilon, self.delta))       
         
@@ -66,6 +65,12 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
 
         # Pre-mining of the rules (takes into account min support)
         list_of_rules, tot_rules = mine_rules_combinations(X, max_card, min_support, allow_negations, features, verbosity)
+        
+        self.budget_per_node /= tot_rules
+        if self.noise == "Gaussian":
+            if (self.delta is None or self.delta == "None") : self.delta = 1/ (n_samples**2 * (self.max_length-1)*tot_rules)	#set delta to polynomial if not set
+       
+        
 
         while (len(rules) < max_length-1) and (not stop) and (self.status == 0):
             #print("Computing rule number ",len(rules))

@@ -4,6 +4,7 @@ import numpy as np
 from corels import RuleList, CorelsClassifier
 from utils_greedy import *
 
+
 """
 Subclass of the CORELSClassifier class, training a rule list using a greedy method with DP with noisy max report (cauchy noise)."""
 
@@ -100,8 +101,12 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                 n_samples_other = n_samples_remain - n_samples_rule #number of samples not captured yet
                 
                 # Minimum support check
-
-                average_outcome_rule = 0 if len(rule_capt_indices[0])==0 else np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
+                if len(rule_capt_indices[0])==0 : 
+                    capt_gini = 0
+                else:
+                    average_outcome_rule = np.average(y_remain[rule_capt_indices]) #clever way to know if more samples of label 0 or 1 are captured
+                    capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
+                    
                 if len(rule_capt_indices[0]) == len(y_remain): #to avoid computing empty mean (numpy warning)
                     other_gini =0
                 else :                         
@@ -109,7 +114,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
                     other_gini = (n_samples_other/n_samples_remain) * (1 - (average_outcome_other)**2 - (1 - average_outcome_other)**2)
                
                 #rule_gini = 1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2
-                capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
+
                 rule_gini = capt_gini + other_gini
                 if self.noise == "Gaussian":
                     rule_gini += dp.gaussian(self.budget_per_node, self.delta, self.sensitivity, 1)[0] #noisy version

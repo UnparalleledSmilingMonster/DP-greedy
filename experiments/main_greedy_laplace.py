@@ -6,8 +6,8 @@ import numpy as np
 import DP as dp
 
 dataset = "folktable"
-min_support = 0.05
-max_length = 3
+min_support = 0.02
+max_length = 7
 max_card = 2
 epsilon = 1
 compute_exact = False
@@ -22,9 +22,10 @@ res = np.zeros(N_runs)
 for i in range(N_runs):
     if not compute_exact:
         # Greedy
-        greedy_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace")
+        greedy_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.98)
         greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)
         my_rl = greedy_rl
+        my_rl.distributional_overfit(X_unbias, np.array(X_unbias[0:5]))
         print(my_rl)
     else:
         # CORELS
