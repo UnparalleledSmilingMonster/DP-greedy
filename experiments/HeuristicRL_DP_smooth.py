@@ -245,8 +245,8 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         
         Y_train_hat = self.get_rule_per_sample(X_train)
         Y_test_hat = self.get_rule_per_sample(X_test)      
-        plt.hist(Y_train_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.6, label = "Training data")
-        plt.hist(Y_test_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.6, label = "Test data")
+        plt.hist(Y_train_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.4, label = "Training data")
+        plt.hist(Y_test_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.4, label = "Test data")
         plt.legend()
         ticks = range(0, len(self.rl_.rules))
         plt.xticks(ticks)

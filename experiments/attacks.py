@@ -21,16 +21,16 @@ from art.metrics.privacy.worst_case_mia_score import get_roc_for_fpr
               
 
 dataset = "compas"
-min_support = 0.10
-max_length = 7
+min_support = 0.15
+max_length = 5
 max_card = 2
-epsilon = 1
+epsilon = 0.1
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
-seed = 42
+seed = 35
 X_unbias,features_unbias = dp.clean_dataset(X,features, dataset)
 N = len(X_unbias)            
-x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.80, seed =seed)
+x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.50, seed =seed)
 
 def wrap_predict(model, X):
     predictions =  model.predict(X)
@@ -49,7 +49,6 @@ def wrap_predict(model, X):
 
 def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 0.5):
     # train attack model
-    attack_train_ratio = 0.5
     attack_train_size = int(len(x_train) * attack_train_ratio)
     attack_test_size = int(len(x_test) * attack_train_ratio)
 
@@ -69,10 +68,7 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
         if train_acc<0.5:
             return 1 - bb_attack.infer(x, y, probabilities=True)
         return bb_attack.infer(x, y, probabilities=True)
-        
-   
-        
-        
+    
         
     test_acc = 1 - (np.sum(inferred_test_bb) / len(inferred_test_bb))
     acc = (train_acc * len(inferred_train_bb) + test_acc * len(inferred_test_bb)) / (len(inferred_train_bb) + len(inferred_test_bb))
@@ -96,18 +92,18 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     """
     fpr, tpr, threshold = get_roc_for_fpr(attack_proba=bb_mia_test_probs, attack_true=bb_mia_test_labels, targeted_fpr=0.001)[0]
     print(f'{tpr=}: {fpr=}: {threshold=}')"""     
-
+    
     fpr, tpr, _ = roc_curve(y_score=bb_mia_test_probs, y_true=bb_mia_test_labels)
     plt.figure(figsize=(8,8))
     plt.plot(fpr, tpr, color="darkorange", linewidth =2, label="ROC curve")
     plt.plot([0, 1], [0, 1], color="navy", linewidth =2, linestyle="--", label='Random Inference')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.0])
+    #plt.xlim([0.0, 1.0])
+    #plt.ylim([0.0, 1.0])
     plt.xticks(np.linspace(0,1,10))
     plt.xlabel("False Positive Rate")
     plt.xscale("symlog")
     plt.ylabel("True Positive Rate")
-    plt.title("Receiver operating characteristic")
+    plt.title("Receiver Operating Characteristic")
     plt.legend(loc="lower right")
     plt.show()
     
@@ -130,7 +126,7 @@ print("\n####################\n")
 #Part for greedy rl vanilla          
 
 greedy_rl = GreedyRLClassifier(min_support=0.0, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
-greedy_rl.fit(X_unbias, y, features=features_unbias, prediction_name=prediction)
+greedy_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
 train_acc = np.average(greedy_rl.predict(x_train) == y_train)
 test_acc = np.average(greedy_rl.predict(x_test) == y_test)
 print("Vanilla Greedy RL:")
