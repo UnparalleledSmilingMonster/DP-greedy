@@ -12,9 +12,9 @@ lambda_letter = '\u03BB'
 
 def method_epsilon_graph(res, dataset = "compas", max_length = 7):
     methods = sorted(set([res[key][2] for key in res]))
-    methods.remove("vanilla")
+    if "vanilla" in methods : methods.remove("vanilla")
     epsilons = set([res[key][3] for key in res])
-    epsilons.remove('x')
+    if "x" in epsilons : epsilons.remove('x')
     epsilons = sorted(epsilons)
     
     accuracies = np.zeros((len(methods), len(epsilons)))
@@ -22,13 +22,13 @@ def method_epsilon_graph(res, dataset = "compas", max_length = 7):
     for key in res :
         if res[key][1] != max_length or res[key][0] != dataset : continue
         if res[key][2] == "vanilla":
-            best = res[key][11]
+            best = res[key][9]
             continue
             
         else:
             i = methods.index(res[key][2])
             j = epsilons.index(res[key][3])        
-            accuracies[i][j] = res[key][11]
+            accuracies[i][j] = res[key][9]
     
     plt.figure(figsize=(12,10))
     for i in range(len(methods)):    
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     with open("summary.nfo", 'r') as summary :
         res = json.load(summary)
         summary.close()
-    method_epsilon_graph(res, dataset = "adult")
+    method_epsilon_graph(res, dataset = "compas")
     
    
     
