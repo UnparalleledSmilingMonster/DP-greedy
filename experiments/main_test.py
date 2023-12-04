@@ -43,8 +43,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    X, y, features, prediction = load_from_csv("data/%s.csv" %args.dataset)
-    X_unbias,features_unbias = dp.clean_dataset(X,features, dp.get_biases(args.dataset))
+    X_unbias, y, features_unbias, prediction = load_from_csv("data/%s.csv" %args.dataset)
+    #X_unbias,features_unbias = dp.clean_dataset(X,features, dp.get_biases(args.dataset))
     N = len(X_unbias)
 
     assert(args.test_train >0)

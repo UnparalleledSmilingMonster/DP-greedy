@@ -5,10 +5,10 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-dataset = "compas"
-min_support = 0.10
-max_length = 5
-max_card = 2
+dataset = "folktable"
+min_support = 0.05
+max_length = 10
+max_card = 1
 epsilon = 1
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)

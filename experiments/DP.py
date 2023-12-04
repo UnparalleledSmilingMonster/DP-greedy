@@ -193,6 +193,8 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
 
 def clean_dataset(X,features, biases):
     """Returns a dataset deprived from the columns we do not want the classifier rules to be based upon"""
+    
+    if biases is None : return X, features
     rmv = np.zeros(len(features), dtype=int)
     for bias in biases :
         rmv += np.fromiter(map(lambda x: 1 if x.startswith(bias) else 0, features), dtype=int)
@@ -204,7 +206,7 @@ def clean_dataset(X,features, biases):
 def get_biases(dataset):
     if dataset=="compas" : return unbias_compas
     elif dataset == "adult": return unbias_adult
-    elif dataset == "folktable" : return unbias_folktable
+    #elif dataset == "folktable" : return unbias_folktable
     
     else : return None
     

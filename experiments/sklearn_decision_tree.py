@@ -6,24 +6,23 @@ from sklearn import metrics #Import scikit-learn metrics module for accuracy cal
 
 
 #Reference model to compare to for adult dataset
-#Create a greedy-rule list using successive decision trees of depth 1.
 
-max_length = 5
+max_depth = 10
 
+dataset = pd.read_csv("data/folktable_unfiltered.csv")
 
-dataset = pd.read_csv("data/adult.csv")
-
-y = np.array(dataset["income"])
-X = dataset.drop(columns=["income"])
+y = np.array(dataset["Employed"])
+X = dataset.drop(columns=["Employed"])
 
 
 # Create Decision Tree classifer object
-clf = DecisionTreeClassifier()
+clf = DecisionTreeClassifier(max_depth=max_depth)
 
 # Train Decision Tree Classifer
 clf = clf.fit(X,y)
 
 #Predict the response for test dataset
 y_pred = clf.predict(X)
+print("Depth :", clf.get_depth())
 
 print("Accuracy for adult dataset:",metrics.accuracy_score(y, y_pred))
