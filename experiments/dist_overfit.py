@@ -5,17 +5,17 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-dataset = "folktable"
-min_support = 0.05
-max_length = 10
+dataset = "compas"
+min_support = 0.10
+max_length = 5
 max_card = 2
 epsilon = 1
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
-seed = 30
+seed = 42
 X_unbias,features_unbias = dp.clean_dataset(X,features, dataset)
 N = len(X_unbias)            
-x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.80, seed =seed)
+x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.70, seed =seed)
 
 DP_smooth_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.98)
 DP_smooth_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)

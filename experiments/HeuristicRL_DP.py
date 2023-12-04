@@ -219,12 +219,27 @@ class DPGreedyRLClassifier(CorelsClassifier):
         
         Y_train_hat = self.get_rule_per_sample(X_train)
         Y_test_hat = self.get_rule_per_sample(X_test)      
-        plt.hist(Y_train_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.6, label = "Training data")
-        plt.hist(Y_test_hat, bins = [i for i in range(len(self.rl_.rules)+1)], density= True, alpha = 0.6, label = "Test data")
-        plt.legend()
+        
+        train_unique = np.unique(Y_train_hat, return_counts = True)
+        test_unique = np.unique(Y_test_hat, return_counts = True)
+        
+        arr1 = np.zeros(len(self.rl_.rules))
+        arr2 =  np.zeros(len(self.rl_.rules))
+        for i in range(len(train_unique[0])):
+            arr1[int(train_unique[0][i])] = train_unique[1][i]
+        arr1/=len(Y_train_hat)
+        for i in range(len(test_unique[0])):
+            arr2[int(test_unique[0][i])] = test_unique[1][i]
+        arr2/=len(Y_test_hat)
+
+        print("Distributional overfit :", np.linalg.norm(arr1-arr2))
+        plt.hist(Y_train_hat, bins = [i for i in range(len(self.rl_.rules)+1)], color="red", density= True, alpha = 0.6, label = "Training data")
+        plt.hist(Y_test_hat, bins = [i for i in range(len(self.rl_.rules)+1)], color="royalblue", density= True, alpha = 0.6, label = "Test data")
+        plt.xlabel("Rule", fontsize = 16)
+        plt.ylabel("Proportion of samples caught", fontsize = 16)
+        plt.legend(fontsize=13)
         ticks = range(0, len(self.rl_.rules))
         plt.xticks(ticks)
-
         plt.show()
     
     
