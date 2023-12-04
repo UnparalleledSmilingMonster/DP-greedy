@@ -5,11 +5,8 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-
 from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
-
-
 
 from art.attacks.inference.membership_inference import MembershipInferenceBlackBox, MembershipInferenceBlackBoxRuleBased
 from art.estimators.estimator import BaseEstimator
@@ -18,16 +15,14 @@ from art.estimators.classification import BlackBoxClassifier
 from art.metrics.privacy.worst_case_mia_score import get_roc_for_fpr
 
               
-              
-
 dataset = "compas"
-min_support = 0.15
+min_support = 0.10
 max_length = 5
 max_card = 2
-epsilon = 0.1
+epsilon = 1
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
-seed = 35
+seed = 12
 X_unbias,features_unbias = dp.clean_dataset(X,features, dataset)
 N = len(X_unbias)            
 x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.50, seed =seed)
@@ -47,7 +42,7 @@ def wrap_predict(model, X):
 
 
 
-def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 0.5):
+def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 0.7):
     # train attack model
     attack_train_size = int(len(x_train) * attack_train_ratio)
     attack_test_size = int(len(x_test) * attack_train_ratio)
@@ -68,7 +63,7 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
         if train_acc<0.5:
             return 1 - bb_attack.infer(x, y, probabilities=True)
         return bb_attack.infer(x, y, probabilities=True)
-    
+
         
     test_acc = 1 - (np.sum(inferred_test_bb) / len(inferred_test_bb))
     acc = (train_acc * len(inferred_train_bb) + test_acc * len(inferred_test_bb)) / (len(inferred_train_bb) + len(inferred_test_bb))
@@ -93,8 +88,11 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     fpr, tpr, threshold = get_roc_for_fpr(attack_proba=bb_mia_test_probs, attack_true=bb_mia_test_labels, targeted_fpr=0.001)[0]
     print(f'{tpr=}: {fpr=}: {threshold=}')"""     
     
-    fpr, tpr, _ = roc_curve(y_score=bb_mia_test_probs, y_true=bb_mia_test_labels)
+    fpr, tpr, _ = roc_curve( y_true=bb_mia_test_labels, y_score=bb_mia_test_probs, drop_intermediate = False)
     plt.figure(figsize=(8,8))
+    print(tpr)
+    for i in range(len(fpr)):
+        if tpr[i] < fpr[i] : tpr[i],fpr[i] = fpr[i], tpr[i]
     plt.plot(fpr, tpr, color="darkorange", linewidth =2, label="ROC curve")
     plt.plot([0, 1], [0, 1], color="navy", linewidth =2, linestyle="--", label='Random Inference')
     #plt.xlim([0.0, 1.0])
