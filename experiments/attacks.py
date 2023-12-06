@@ -15,14 +15,14 @@ from art.estimators.classification import BlackBoxClassifier
 from art.metrics.privacy.worst_case_mia_score import get_roc_for_fpr
 
               
-dataset = "folktable"
-min_support = 0.05
+dataset = "compas"
+min_support = 0.15
 max_length = 10
-max_card = 1
+max_card = 3
 epsilon = 1
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
-seed = 12
+seed = 42
 X_unbias,features_unbias = dp.clean_dataset(X,features, dataset)
 N = len(X_unbias)            
 x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.50, seed =seed)
@@ -105,10 +105,24 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     plt.legend(loc="lower right")
     plt.show()
     
-    
-    
+
+corels_rl = CorelsClassifier(n_iter=9500000, map_type="prefix", policy="lower_bound", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.15, max_length=100, c=0.0000001)
+corels_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
+train_acc = np.average(corels_rl.predict(x_train) == y_train)
+test_acc = np.average(corels_rl.predict(x_test) == y_test)
+print("DP Smooth RL:")
+print("train_acc= ", train_acc)
+print("test_acc = ", test_acc)
+print(corels_rl.get_status())
+
+MIA_rule_list(corels_rl, x_train, y_train, x_test, y_test)
+
+print("\n####################\n")
 
 
+    
+
+"""
 dp_smooth_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", seed = seed)
 dp_smooth_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
 train_acc = np.average(dp_smooth_rl.predict(x_train) == y_train)
@@ -132,4 +146,4 @@ print("train_acc= ", train_acc)
 print("test_acc = ", test_acc)
 
 MIA_rule_list(greedy_rl, x_train, y_train, x_test, y_test)
-
+"""
