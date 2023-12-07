@@ -14,15 +14,16 @@ from art.estimators.classification import BlackBoxClassifier
 from art.metrics.privacy.worst_case_mia_score import get_roc_for_fpr
 
               
-dataset = "compas"
+dataset = "german_credit"
 min_support = 0.15
 max_length = 10
-max_card = 3
+max_card = 1
 epsilon = 1
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
 seed = 42
 X_unbias,features_unbias = dp.clean_dataset(X,features, dataset)
+#X_unbias, y = X_unbias[:1000], y[:1000]
 N = len(X_unbias)            
 x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.50, seed =seed)
 
@@ -54,13 +55,14 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     attack_test_size = int(len(x_test) * attack_train_ratio)
 
     wrapper = BlackBoxClassifier(lambda X : wrap_predict(model, X), input_shape = x_train[0].shape, nb_classes = 2)
-    mia_label_only = LabelOnlyDecisionBoundary(wrapper) #we use a random forest as the attack model
+    mia_label_only = LabelOnlyDecisionBoundary(wrapper,distance_threshold_tau =1) #we use a random forest as the attack model
 
     print(x_train[:attack_train_size].astype(np.float32).shape)
-    """
+    
+    
     mia_label_only.calibrate_distance_threshold(x_train[:attack_train_size].astype(np.float32), y_train[:attack_train_size],
                                             x_test[:attack_test_size].astype(np.float32), y_test[:attack_test_size])
-    """
+
 
     # get inferred values
     inferred_train = mia_label_only.infer(x_train[attack_train_size:].astype(np.float32), y_train[attack_train_size:])
@@ -82,11 +84,10 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     # we run the worst case metric on trainset to find an appropriate threshold
     # Black Box
     members_test_prob = mia_label_only.infer(x_train[attack_train_size:].astype(np.float32), y_train[attack_train_size:], probabilities=True)
-    print(members_test_prob)
+    print(members_test_prob[:,1].shape)
     nonmembers_test_prob = mia_label_only.infer(x_test[attack_test_size:].astype(np.float32), y_test[attack_test_size:], probabilities=True)
 
-    mia_test_probs = np.concatenate((np.squeeze(members_test_prob, axis=-1),
-                                   np.squeeze(nonmembers_test_prob, axis=-1)))
+    mia_test_probs = np.concatenate((members_test_prob[:,1], nonmembers_test_prob[:,1]))
                                   
     mia_test_labels = np.concatenate((np.ones_like(y_train[attack_train_size:]), np.zeros_like(y_test[attack_test_size:])))
 
@@ -113,7 +114,7 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     plt.show()
     
 
-corels_rl = CorelsClassifier(n_iter=10000, map_type="prefix", policy="lower_bound", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.15, max_length=100, c=0.0000001)
+corels_rl = CorelsClassifier(n_iter=500000, map_type="prefix", policy="objective", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.01, max_length=100, c=0.0000001)
 corels_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
 train_acc = np.average(corels_rl.predict(x_train) == y_train)
 test_acc = np.average(corels_rl.predict(x_test) == y_test)
