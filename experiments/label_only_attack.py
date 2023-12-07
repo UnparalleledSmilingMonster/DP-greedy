@@ -8,7 +8,7 @@ import DP as dp
 from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
 
-from art.attacks.inference.membership_inference import MembershipInferenceBlackBox, MembershipInferenceBlackBoxRuleBased
+from art.attacks.inference.membership_inference import LabelOnlyDecisionBoundary
 from art.estimators.estimator import BaseEstimator
 from art.estimators.classification import BlackBoxClassifier
 from art.metrics.privacy.worst_case_mia_score import get_roc_for_fpr
@@ -27,6 +27,13 @@ N = len(X_unbias)
 x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.50, seed =seed)
 
 def wrap_predict(model, X):
+
+    """too slow (10 times slower)
+    n_features = len(X[0])
+    binarize = lambda x : 0. if x <0.5 else 1.
+    X = np.fromiter(map(binarize, X.flatten()), dtype=np.float32).reshape(-1, n_features) 
+    """
+    X = np.rint(X)
     predictions =  model.predict(X)
     
     #One hot encoding
@@ -36,7 +43,7 @@ def wrap_predict(model, X):
             res[i]=[0,1]
         else:
             res[i]=[1,0]
-    
+            
     return res
 
 
@@ -47,26 +54,26 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     attack_test_size = int(len(x_test) * attack_train_ratio)
 
     wrapper = BlackBoxClassifier(lambda X : wrap_predict(model, X), input_shape = x_train[0].shape, nb_classes = 2)
-    bb_attack = MembershipInferenceBlackBox(wrapper, attack_model_type = "rf") #we use a random forest as the attack model
+    mia_label_only = LabelOnlyDecisionBoundary(wrapper) #we use a random forest as the attack model
 
-    bb_attack.fit(x_train[:attack_train_size].astype(np.float32), y_train[:attack_train_size], x_test[:attack_test_size].astype(np.float32), y_test[:attack_test_size])
-                  
+    print(x_train[:attack_train_size].astype(np.float32).shape)
+    """
+    mia_label_only.calibrate_distance_threshold(x_train[:attack_train_size].astype(np.float32), y_train[:attack_train_size],
+                                            x_test[:attack_test_size].astype(np.float32), y_test[:attack_test_size])
+    """
+
     # get inferred values
-    inferred_train_bb = bb_attack.infer(x_train[attack_train_size:].astype(np.float32), y_train[attack_train_size:])
-    inferred_test_bb = bb_attack.infer(x_test[attack_test_size:].astype(np.float32), y_test[attack_test_size:])
+    inferred_train = mia_label_only.infer(x_train[attack_train_size:].astype(np.float32), y_train[attack_train_size:])
+    inferred_test = mia_label_only.infer(x_test[attack_test_size:].astype(np.float32), y_test[attack_test_size:])
     # check accuracy
-    train_acc = np.sum(inferred_train_bb) / len(inferred_train_bb)
+    train_acc = np.sum(inferred_train) / len(inferred_train)
     
-    def infer_reverse(model, train_acc, x, y):
-        """ to use if model is under the roc curve"""
-        if train_acc<0.5:
-            return 1 - bb_attack.infer(x, y, probabilities=True)
-        return bb_attack.infer(x, y, probabilities=True)
+
 
         
-    test_acc = 1 - (np.sum(inferred_test_bb) / len(inferred_test_bb))
-    acc = (train_acc * len(inferred_train_bb) + test_acc * len(inferred_test_bb)) / (len(inferred_train_bb) + len(inferred_test_bb))
-    print("\nBlack Box Attack:")
+    test_acc = 1 - (np.sum(inferred_test) / len(inferred_test))
+    acc = (train_acc * len(inferred_train) + test_acc * len(inferred_test)) / (len(inferred_train) + len(inferred_test))
+    print("\nLabel Only Membership Inference Attack:")
     print(f"Members Accuracy: {train_acc:.4f}")
     print(f"Non Members Accuracy {test_acc:.4f}")
     print(f"Attack Accuracy {acc:.4f}")
@@ -74,20 +81,21 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
 
     # we run the worst case metric on trainset to find an appropriate threshold
     # Black Box
-    bb_members_test_prob = bb_attack.infer(x_train[attack_train_size:].astype(np.float32), y_train[attack_train_size:], probabilities=True)
-    bb_nonmembers_test_prob = bb_attack.infer(x_test[attack_test_size:].astype(np.float32), y_test[attack_test_size:], probabilities=True)
+    members_test_prob = mia_label_only.infer(x_train[attack_train_size:].astype(np.float32), y_train[attack_train_size:], probabilities=True)
+    print(members_test_prob)
+    nonmembers_test_prob = mia_label_only.infer(x_test[attack_test_size:].astype(np.float32), y_test[attack_test_size:], probabilities=True)
 
-    bb_mia_test_probs = np.concatenate((np.squeeze(bb_members_test_prob, axis=-1),
-                                   np.squeeze(bb_nonmembers_test_prob, axis=-1)))
+    mia_test_probs = np.concatenate((np.squeeze(members_test_prob, axis=-1),
+                                   np.squeeze(nonmembers_test_prob, axis=-1)))
                                   
-    bb_mia_test_labels = np.concatenate((np.ones_like(y_train[attack_train_size:]), np.zeros_like(y_test[attack_test_size:])))
+    mia_test_labels = np.concatenate((np.ones_like(y_train[attack_train_size:]), np.zeros_like(y_test[attack_test_size:])))
 
     # We allow 1% FPR 
     """
     fpr, tpr, threshold = get_roc_for_fpr(attack_proba=bb_mia_test_probs, attack_true=bb_mia_test_labels, targeted_fpr=0.001)[0]
     print(f'{tpr=}: {fpr=}: {threshold=}')"""     
     
-    fpr, tpr, _ = roc_curve( y_true=bb_mia_test_labels, y_score=bb_mia_test_probs, drop_intermediate = False)
+    fpr, tpr, _ = roc_curve( y_true=mia_test_labels, y_score=mia_test_probs, drop_intermediate = False)
     plt.figure(figsize=(8,8))
     print(tpr)
     for i in range(len(fpr)):
@@ -105,11 +113,11 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     plt.show()
     
 
-corels_rl = CorelsClassifier(n_iter=9500000, map_type="prefix", policy="lower_bound", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.15, max_length=100, c=0.0000001)
+corels_rl = CorelsClassifier(n_iter=10000, map_type="prefix", policy="lower_bound", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.15, max_length=100, c=0.0000001)
 corels_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
 train_acc = np.average(corels_rl.predict(x_train) == y_train)
 test_acc = np.average(corels_rl.predict(x_test) == y_test)
-print("DP Smooth RL:")
+print("Corels RuleList:")
 print("train_acc= ", train_acc)
 print("test_acc = ", test_acc)
 print(corels_rl.get_status())
