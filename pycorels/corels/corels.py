@@ -516,6 +516,78 @@ class CorelsClassifier:
             return "exploration_not_started"
         else:
             return "unknown"
+    
+    def distributional_overfit(self, X_train,  X_test, y_train, y_test):
+        import matplotlib.pyplot as plt
+        classes = [0,1]
+                
+        def split_probabilities(X,y, y_class):
+            """
+            Returns the samples' distribution across rules, conditionned to their label (we distinguish 0 and 1 labels).
+            See "Disparate Vulnerability, on the unfairness of privacy attacks agianst ML" (Yaghini et Al) for formulas.
+            Instaed of using samples classification y_hat, we chose to replace it by the rule catching the sample. 
+            """      
+            idx = np.argwhere(y == y_class).flatten()
+            print(len(idx))
+            X_class = X[idx]
+            Y_hat_class = self.get_rule_per_sample(X_class)
+            idx,counts = np.unique(Y_hat_class, return_counts = True)   
+            probs= counts/len(y) #normalize because test and train may not have the same number of samples, and we want to compare distributions
+            return(idx,probs)      
+        
+        def pad(arr, n):
+            res = np.zeros(n)
+            for i in range(len(arr[0])):
+                res[int(arr[0][i])] = arr[1][i]
+            return res
+            
+        nb_rules = len(self.rl_.rules)
+        train_unique = [pad(split_probabilities(X_train, y_train, i), nb_rules) for i in classes]        
+        test_unique = [pad(split_probabilities(X_test, y_test, i), nb_rules) for i in classes]
+        
+        tau = np.zeros(len(classes))
+        for i in classes :
+            tau[i]= 1/2 *np.sum(np.abs(train_unique[i] -test_unique[i]))
+                
+        y = np.concatenate((y_train, y_test))
+        prob1 = len(np.where(y ==1)[0]) /len(y)
+        probs_per_class = np.array([1-prob1, prob1])
+        
+        print("Distributional Overfit:", tau)
+        print("Overall Vulnerability:", 1/2 *(1+ np.sum(probs_per_class*tau) ))
+        plt.stairs(np.sum(train_unique, axis=0),[i for i in range(len(self.rl_.rules)+1)], fill = True,color="red", alpha = 0.6, label = "Training data" )
+        plt.stairs(np.sum(test_unique, axis=0),[i for i in range(len(self.rl_.rules)+1)], fill = True,color="royalblue", alpha = 0.6, label = "Test data" )
+        plt.xlabel("Rule", fontsize = 16)
+        plt.ylabel("Proportion of samples caught", fontsize = 16)
+        plt.legend(fontsize=13)
+        ticks = range(0, nb_rules)
+        plt.xticks(ticks)
+        plt.show()
+    
+    def get_rule_per_sample(self, X):
+        rules = self.rl_.rules
+        arr = -np.ones(len(X))
+        for i in range(len(rules)-1):
+            rule_capt_indices = CorelsClassifier.rule_indices(rules[i]["antecedents"],X)
+            for capt in rule_capt_indices[0]:
+                if arr[capt] == -1 : arr[capt] =  i
+        
+        return np.where(arr==-1, len(rules)-1, arr)        
+    
+    @staticmethod  
+    def rule_indices(a_rule, X):
+        """
+        Returns an array of indexes that represent the samples captured by a_rule.
+        """
+        rule_capts = np.ones(X.shape[0])
+        
+        for a_one_rule in a_rule:
+            if a_one_rule > 0:
+                rule_capts = np.logical_and(rule_capts, X[:,a_one_rule-1])
+            else:
+                rule_capts = np.logical_and(rule_capts, np.logical_not(X[:,(-a_one_rule)-1]))
+
+        return np.where(rule_capts == 1)
 
     def get_num_mined_rules(self):
         return get_n_rules()

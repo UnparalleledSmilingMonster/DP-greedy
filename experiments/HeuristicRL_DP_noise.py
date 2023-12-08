@@ -220,45 +220,6 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
     def best_pred(count0, count1):
         return 0 if count0 >= count1 else 1 
         
-    def distributional_overfit(self, X_train,  X_test):
-        import matplotlib.pyplot as plt
-        classes = [0,1]
-        
-        Y_train_hat = self.get_rule_per_sample(X_train)
-        Y_test_hat = self.get_rule_per_sample(X_test)      
-        
-        train_unique = np.unique(Y_train_hat, return_counts = True)
-        test_unique = np.unique(Y_test_hat, return_counts = True)
-        
-        arr1 = np.zeros(len(self.rl_.rules))
-        arr2 =  np.zeros(len(self.rl_.rules))
-        for i in range(len(train_unique[0])):
-            arr1[int(train_unique[0][i])] = train_unique[1][i]
-        arr1/=len(Y_train_hat)
-        for i in range(len(test_unique[0])):
-            arr2[int(test_unique[0][i])] = test_unique[1][i]
-        arr2/=len(Y_test_hat)
-
-        print("Distributional overfit :", np.linalg.norm(arr1-arr2))
-        plt.hist(Y_train_hat, bins = [i for i in range(len(self.rl_.rules)+1)], color="red", density= True, alpha = 0.6, label = "Training data")
-        plt.hist(Y_test_hat, bins = [i for i in range(len(self.rl_.rules)+1)], color="royalblue", density= True, alpha = 0.6, label = "Test data")
-        plt.xlabel("Rule", fontsize = 16)
-        plt.ylabel("Proportion of samples caught", fontsize = 16)
-        plt.legend(fontsize=13)
-        ticks = range(0, len(self.rl_.rules))
-        plt.xticks(ticks)
-        plt.show()
-    
-    def get_rule_per_sample(self, X):
-        rules = self.rl_.rules
-        arr = -np.ones(len(X))
-        for i in range(len(rules)-1):
-            rule_capt_indices = rule_indices(rules[i]["antecedents"],X)
-            for capt in rule_capt_indices[0]:
-                if arr[capt] == -1 : arr[capt] =  i
-        
-        return np.where(arr==-1, len(rules)-1, arr)  
-        
               
 
     def __str__(self):
