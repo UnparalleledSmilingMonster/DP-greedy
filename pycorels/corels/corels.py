@@ -528,7 +528,6 @@ class CorelsClassifier:
             Instaed of using samples classification y_hat, we chose to replace it by the rule catching the sample. 
             """      
             idx = np.argwhere(y == y_class).flatten()
-            print(len(idx))
             X_class = X[idx]
             Y_hat_class = self.get_rule_per_sample(X_class)
             idx,counts = np.unique(Y_hat_class, return_counts = True)   

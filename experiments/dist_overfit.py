@@ -17,7 +17,7 @@ X_unbias,features_unbias = dp.clean_dataset(X,features, dataset)
 N = len(X_unbias)            
 x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.70, seed =seed)
 
-
+"""
 DP_smooth_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.98)
 DP_smooth_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
 DP_smooth_rl.distributional_overfit(x_train, x_test, y_train, y_test)
@@ -35,6 +35,5 @@ test_acc = np.average(corels_rl.predict(x_test) == y_test)
 print("train_acc= ", train_acc)
 print("test_acc = ", test_acc)
 corels_rl.distributional_overfit(x_train, x_test, y_train, y_test)
-"""
 
 
