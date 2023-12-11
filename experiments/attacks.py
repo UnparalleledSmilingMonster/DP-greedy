@@ -121,7 +121,7 @@ print("\n####################\n")
 
     
 
-"""
+
 dp_smooth_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", seed = seed)
 dp_smooth_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
 train_acc = np.average(dp_smooth_rl.predict(x_train) == y_train)
@@ -145,4 +145,4 @@ print("train_acc= ", train_acc)
 print("test_acc = ", test_acc)
 
 MIA_rule_list(greedy_rl, x_train, y_train, x_test, y_test)
-"""
+
