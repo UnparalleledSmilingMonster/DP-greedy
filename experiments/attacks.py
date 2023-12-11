@@ -15,8 +15,8 @@ from art.metrics.privacy.worst_case_mia_score import get_roc_for_fpr
 
               
 dataset = "german_credit"
-min_support = 0.15
-max_length = 10
+min_support = 0.05
+max_length = 20
 max_card = 1
 epsilon = 1
 verbosity = [] # ["mine"] # ["mine"]
@@ -105,7 +105,7 @@ def MIA_rule_list(model, x_train, y_train, x_test, y_test, attack_train_ratio = 
     plt.show()
     
 
-corels_rl = CorelsClassifier(n_iter=500000, map_type="prefix", policy="objective", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.01, max_length=100, c=0.0000001)
+corels_rl = CorelsClassifier(n_iter=8000000, map_type="prefix", policy="objective", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.01, max_length=100, c=0.0000001)
 corels_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
 train_acc = np.average(corels_rl.predict(x_train) == y_train)
 test_acc = np.average(corels_rl.predict(x_test) == y_test)

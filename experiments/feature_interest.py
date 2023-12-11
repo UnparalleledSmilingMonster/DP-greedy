@@ -19,9 +19,9 @@ def get_feature(features, i):
 
 dataset = "adult"
 min_support = 0.05
-max_length = 10
+max_length = 7
 max_card = 2
-epsilon = 1
+epsilon = 0.1
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
 seed = 35
@@ -42,34 +42,33 @@ print("Features of interest:\n", features_of_interest)
 
 def ratio_interest(model, features):
     dic ={}
+    normalize = 0
     for feature in features : dic[feature] = 0
     rules = model.rl_.rules
-    arr = -np.ones(len(X))
     for i in range(len(rules)-1):
         rule_i = []
         for j in range(len(rules[i]["antecedents"])):
             rule_i.append(get_feature(model.rl_.features, rules[i]["antecedents"][j]))
         for feature in rule_i:
-            if feature in dic : dic[feature] += 1
+            feature= feature.replace("not ", "")
+            if feature in dic : 
+                dic[feature] += 1
     return sum(dic.values())/(len(rules)-1)
     
     
 
-corels_rl = CorelsClassifier(n_iter=1000000, map_type="prefix", policy="lower_bound", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.05, max_length=10000, c=0.0000001)
+corels_rl = CorelsClassifier(n_iter=1000000, map_type="prefix", policy="lower_bound", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.05, max_length=7, c=0.0000001)
 corels_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
 print(corels_rl.get_status())
-
 print("Features of interest used:", ratio_interest(corels_rl, features_of_interest))
 
 
 DP_smooth_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.98)
 DP_smooth_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
+print(DP_smooth_rl)
 print("Features of interest used:", ratio_interest(DP_smooth_rl, features_of_interest))
 
-greedy_rl = GreedyRLClassifier(min_support=0.00, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
+greedy_rl = GreedyRLClassifier(min_support=0.05, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
 greedy_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
-print("Features of interest used:", ratio_interest(greedy_rl, features_of_interest))
-
-
-print(DP_smooth_rl)
 print(greedy_rl)
+print("Features of interest used:", ratio_interest(greedy_rl, features_of_interest))
