@@ -2,6 +2,7 @@ from corels import load_from_csv, RuleList, CorelsClassifier
 from HeuristicRL import GreedyRLClassifier
 from HeuristicRL_DP import DPGreedyRLClassifier
 from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
+from sklearn.inspection import permutation_importance
 import numpy as np
 import DP as dp
 import pandas as pd
