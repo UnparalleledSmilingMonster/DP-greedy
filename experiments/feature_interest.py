@@ -18,11 +18,11 @@ def get_feature(features, i):
         
         
 
-dataset = "adult"
+dataset = "compas"
 min_support = 0.05
-max_length = 7
+max_length = 10
 max_card = 2
-epsilon = 0.1
+epsilon = 1
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
 seed = 35
@@ -56,20 +56,43 @@ def ratio_interest(model, features):
                 dic[feature] += 1
     return sum(dic.values())/(len(rules)-1)
     
+
+def sort_features(arr, features_unbias, top = 10):
+    res = []
+    top_k_idx = np.argsort(arr)[-top:]    
+    for val in top_k_idx:
+        res.append((features[val], "{0:.4f}".format(arr[val])))
+    return res
+    
+    
     
 
-corels_rl = CorelsClassifier(n_iter=1000000, map_type="prefix", policy="lower_bound", verbosity=["rulelist"], ablation=0, max_card=max_card, min_support=0.05, max_length=7, c=0.0000001)
+corels_rl = CorelsClassifier(n_iter=100000, map_type="prefix", policy="lower_bound", verbosity=[], ablation=0, max_card=max_card, min_support=0.05, max_length=7, c=0.0000001)
 corels_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
-print(corels_rl.get_status())
-print("Features of interest used:", ratio_interest(corels_rl, features_of_interest))
+#print(corels_rl.get_status())
+print("Corels:")
+print("Features of interest used:", ratio_interest(corels_rl, features_of_interest), "\n")
+result = permutation_importance(corels_rl, X_unbias, y, n_repeats=10, random_state=42)
+for elt in reversed(sort_features(result.importances_mean, features_unbias)):
+    print(elt[0] + " : " + elt[1])
 
 
+print("\n")
 DP_smooth_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.98)
 DP_smooth_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
-print(DP_smooth_rl)
+#print(DP_smooth_rl)
+print("DP Smooth rl:")
 print("Features of interest used:", ratio_interest(DP_smooth_rl, features_of_interest))
+result = permutation_importance(DP_smooth_rl, X_unbias, y, n_repeats=10, random_state=42)
+for elt in reversed(sort_features(result.importances_mean, features_unbias)):
+    print(elt[0] + " : " + elt[1])
 
+print("\n")
 greedy_rl = GreedyRLClassifier(min_support=0.05, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
 greedy_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
-print(greedy_rl)
+#print(greedy_rl)
+print("Greedy rl:")
 print("Features of interest used:", ratio_interest(greedy_rl, features_of_interest))
+result = permutation_importance(greedy_rl,  X_unbias, y, n_repeats=10, random_state=42)
+for elt in reversed(sort_features(result.importances_mean, features_unbias)):
+    print(elt[0] + " : " + elt[1])

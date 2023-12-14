@@ -517,7 +517,7 @@ class CorelsClassifier:
         else:
             return "unknown"
     
-    def distributional_overfit(self, X_train,  X_test, y_train, y_test):
+    def distributional_overfit(self, X_train,  X_test, y_train, y_test, show = True):
         import matplotlib.pyplot as plt
         classes = [0,1]
                 
@@ -552,16 +552,20 @@ class CorelsClassifier:
         prob1 = len(np.where(y ==1)[0]) /len(y)
         probs_per_class = np.array([1-prob1, prob1])
         
-        print("Distributional Overfit:", tau)
-        print("Overall Vulnerability:", 1/2 *(1+ np.sum(probs_per_class*tau) ))
-        plt.stairs(np.sum(train_unique, axis=0),[i for i in range(len(self.rl_.rules)+1)], fill = True,color="red", alpha = 0.6, label = "Training data" )
-        plt.stairs(np.sum(test_unique, axis=0),[i for i in range(len(self.rl_.rules)+1)], fill = True,color="royalblue", alpha = 0.6, label = "Test data" )
-        plt.xlabel("Rule", fontsize = 16)
-        plt.ylabel("Proportion of samples caught", fontsize = 16)
-        plt.legend(fontsize=13)
-        ticks = range(0, nb_rules)
-        plt.xticks(ticks)
-        plt.show()
+        #print("Distributional Overfit:", tau)
+        #print("Overall Vulnerability:", 1/2 *(1+ np.sum(probs_per_class*tau) ))
+        
+        if show : 
+            plt.stairs(np.sum(train_unique, axis=0),[i for i in range(len(self.rl_.rules)+1)], fill = True,color="red", alpha = 0.6, label = "Training data" )
+            plt.stairs(np.sum(test_unique, axis=0),[i for i in range(len(self.rl_.rules)+1)], fill = True,color="royalblue", alpha = 0.6, label = "Test data" )
+            plt.xlabel("Rule", fontsize = 16)
+            plt.ylabel("Proportion of samples caught", fontsize = 16)
+            plt.legend(fontsize=13)
+            ticks = range(0, nb_rules)
+            plt.xticks(ticks)
+            plt.show()
+        
+        return(tau, 1/2 *(1+ np.sum(probs_per_class*tau)))
     
     def get_rule_per_sample(self, X):
         rules = self.rl_.rules
