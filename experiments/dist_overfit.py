@@ -5,7 +5,7 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-dataset = "german_credit"
+dataset = "compas"
 min_support = 0.05
 max_length = 7
 max_card = 1
@@ -38,8 +38,8 @@ greedy_rl.distributional_overfit(x_train, x_test, y_train, y_test)
 """
 
 def compute_overfit(model, max_card, max_length, dataset, runs):
-    overfit = np.zeros(2)
-    vul = 0
+    overfit = np.zeros((2,runs))
+    vul = np.zeros(runs)
 
     for seed in range(runs):
         if model == "corels":
@@ -54,10 +54,11 @@ def compute_overfit(model, max_card, max_length, dataset, runs):
         x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.70, seed =seed)
         rl_model.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
         a,b = rl_model.distributional_overfit(x_train, x_test, y_train, y_test, show=False)
-        overfit +=a
-        vul +=b
-
-    print("{0} : dist overfit : {1} | overall vulnerability : {2} on dataset {3}".format(model, overfit/runs, vul/runs, dataset))
+        overfit[:,seed] =a
+        vul [seed] = b
+        
+        
+    print("{0} : dist overfit : {1} +/- {2} | overall vulnerability : {3} +/- {4} on dataset {5}".format(model, np.average(overfit,axis=1), np.var(overfit,axis=1),  np.average(vul), np.var(vul), dataset))
 
     
 
@@ -69,7 +70,7 @@ def compute_overfit(model, max_card, max_length, dataset, runs):
 
 
 
-compute_overfit("corels", max_card, max_length, dataset, runs)
+#compute_overfit("corels", max_card, max_length, dataset, runs)
 compute_overfit("greedy", max_card, max_length, dataset, runs)
 compute_overfit("smooth-greedy", max_card, max_length, dataset, runs)
 
