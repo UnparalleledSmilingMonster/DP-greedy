@@ -169,17 +169,14 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
         
         t1 = x - y1
         t2 = x - y2
-        upper_b = x - min_supp  #>0 
+        upper_b = max(0,x - min_supp)  # since x could, in vary rare cases be < min_supp, we have to ensure it does not get under 0.
         
         if t2 < x - min_supp :
             xi_t2m = smooth_sensitivity_gini_function(x,beta, np.floor(t2))
             xi_t2p = smooth_sensitivity_gini_function(x,beta, np.ceil(t2))
-            if t1<0:            
-                return max(xi_t2m, xi_t2p)
-            
-            else :            
-                return max(default, xi_t2m, xi_t2p)   
-        
+            if t2 >=0:            
+                return max(default, xi_t2m, xi_t2p)
+                            
         else :  #t2 >= x - min_supp
             if t1 < 0 :
                 return smooth_sensitivity_gini_function(x,beta, upper_b) 
@@ -188,7 +185,7 @@ def smooth_sensitivity_gini(x, beta, min_supp = 1):
                 return max(default, smooth_sensitivity_gini_function(x,beta, upper_b) )   
                 
     
-    return default
+    return default # no roots the function is entirely decreasing
 
 
 def clean_dataset(X,features, biases):
