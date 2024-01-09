@@ -31,7 +31,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         
         if self.noise == "Cauchy":
             self.gamma = 2
-            self.beta = self.budget_per_node/(2*(self.gamma+1)*(2*self.max_length-1))
+            self.beta = self.budget_per_node/(2*(self.gamma+1))
             self.delta =0  #pure DP with Cauchy Noise
             
         
@@ -62,8 +62,8 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         min_supp_N = np.floor(self.min_support * n_samples)
         
         if self.noise == "Laplace":
-            if (self.delta is None or self.delta == "None") : self.delta =1 / n_samples**2 	#set delta to polynomial if not set
-            self.beta = self.epsilon/(2*np.log(2/self.delta))
+            if (self.delta is None or self.delta == "None") : self.delta =1 / (n_samples**2 * (2*self.max_length-1))	#set delta to polynomial if not set
+            self.beta = self.budget_per_node/(2*np.log(2/self.delta))
             
             
         #print("DP aimed : ({0},{1})".format(self.epsilon, self.delta)) 
