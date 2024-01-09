@@ -196,7 +196,7 @@ def clean_dataset(X,features, biases):
     for bias in biases :
         rmv += np.fromiter(map(lambda x: 1 if x.startswith(bias) else 0, features), dtype=int)
     
-    rmv_idx = np.where(rmv > 0)[0]  #should be == 1 but safeguard is to take >= 1 
+    rmv_idx = np.where(rmv == 1)[0]
     return np.delete(X, rmv_idx, axis = 1), [feature for (idx,feature) in enumerate(features) if idx not in rmv_idx]
     
 

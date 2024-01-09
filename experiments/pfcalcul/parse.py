@@ -141,7 +141,7 @@ if __name__ == '__main__':
     lambda_letter = '\u03BB'
     params = ['dataset', 'Mechanism', epsilon_letter, delta_letter, lambda_letter, 'N', 'Runs', 'Avg. Time(s)', 'Train_acc', 'Test_acc']
 
-    res = GreedyRLParser("visu", "summary_visu.nfo")
+    res = GreedyRLParser("results", "summary.nfo")
     #latex_tabular("tex/results.tex", params, res)
   
 
