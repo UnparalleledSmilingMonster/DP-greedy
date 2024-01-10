@@ -20,7 +20,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.noise = noise
-        self.budget_per_node = self.epsilon / (2*self.max_length-1)
+        self.budget_per_node = self.epsilon / (3*self.max_length-1)
         self.confidence = confidence
         
         self.threshold = dp.confidence_interval_laplace(self.budget_per_node, self.confidence)
@@ -62,7 +62,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
         min_supp_N = np.floor(self.min_support * n_samples)
         
         if self.noise == "Laplace":
-            if (self.delta is None or self.delta == "None") : self.delta =1 / (n_samples**2 * (2*self.max_length-1))	#set delta to polynomial if not set
+            if (self.delta is None or self.delta == "None") : self.delta =1 / (n_samples**2 * (self.max_length-1))	#set delta to polynomial if not set
             self.beta = self.budget_per_node/(2*np.log(2/self.delta))
             
             
@@ -82,7 +82,7 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
             # Greedy choice for next rule    
             
             stop=True
-            if len(X_remain) + dp.laplace(self.budget_per_node,1,1)[0] >= min_supp_N + self.threshold: 
+            if len(X_remain) + dp.laplace(self.budget_per_node,1,1)[0] >= min_supp_N + self.threshold: #1st dp mechanism
                 
                 stop = False
                 confident_X_remain = max(len(X_remain),min_supp_N)

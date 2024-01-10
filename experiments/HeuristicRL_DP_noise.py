@@ -20,7 +20,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         self.epsilon = epsilon #total budget for DP : to be divided for the different processes
         self.delta = delta
         self.noise = noise
-        self.budget_per_node = self.epsilon / (self.max_length-1) #TODO:may need a fix 
+        self.budget_per_node = self.epsilon / (2*self.max_length-1) #TODO:may need a fix 
         self.sensitivity = 0.5 #In dimension 1, all norms are equal
         
         if self.noise == "Laplace":
