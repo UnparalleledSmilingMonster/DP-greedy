@@ -333,7 +333,7 @@ class CorelsClassifier:
         if samples.shape[1] != len(self.rl_.features):
             raise ValueError("Feature count mismatch between eval data (" + str(X.shape[1]) + 
                              ") and feature names (" + str(len(self.rl_.features)) + ")")
-
+        
         return np.array(predict_wrap(samples.astype(np.uint8, copy=False), self.rl_.rules), dtype=np.bool)
 
     def score(self, X, y):

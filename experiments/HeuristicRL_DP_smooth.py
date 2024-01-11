@@ -201,23 +201,24 @@ class DpSmoothGreedyRLClassifier(CorelsClassifier):
     def get_noisy_counts(self, y_remain, rule_capt_indices):    
         if rule_capt_indices is None :
             capt_labels_counts = np.unique(y_remain, return_counts=True)
-        capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
+        else : capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
+        
         
         if capt_labels_counts[0].size == 2:                                    
             capt_labels_0 = capt_labels_counts[1][0]
-            capt_labels_1 = capt_labels_counts[1][1]        
+            capt_labels_1 = capt_labels_counts[1][1]   
+            
         elif len(capt_labels_counts[0]) == 0 :
             capt_labels_0 = 0
             capt_labels_1 = 0
             
-        else:
-            if capt_labels_counts[0][0] == 0:
-                capt_labels_0 = capt_labels_counts[1][0]
-                capt_labels_1 = 0
+        elif capt_labels_counts[0][0] == 0:
+            capt_labels_0 = capt_labels_counts[1][0]
+            capt_labels_1 = 0
                 
-            else:
-                capt_labels_0 = 0
-                capt_labels_1 = capt_labels_counts[1][0]
+        else:
+            capt_labels_0 = 0
+            capt_labels_1 = capt_labels_counts[1][0]
         
         self.true_cards.append([capt_labels_0, capt_labels_1])
         

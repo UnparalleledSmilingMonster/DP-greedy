@@ -19,19 +19,20 @@ def method_epsilon_graph(res, dataset = "compas", max_length = 5):
     
     accuracies = np.zeros((len(methods), len(epsilons)))
     var = np.zeros((len(methods), len(epsilons)))
-    
+       
     
     for key in res :
         if res[key][1] != max_length or res[key][0] != dataset : continue
         if res[key][2] == "vanilla":
-            best = res[key][9]
+            best = res[key][10]
             continue
             
         else:
             i = methods.index(res[key][2])
             j = epsilons.index(res[key][3])        
-            accuracies[i][j] = res[key][9]
-            var[i][j] = res[key][11]
+            accuracies[i][j] = res[key][10]
+            var[i][j] = res[key][12]
+
     
     plt.figure(figsize=(12,10))
     for i in range(len(methods)):    
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     with open("summary_visu.nfo", 'r') as summary :
         res = json.load(summary)
         summary.close()
-    method_epsilon_graph(res, dataset = "adult")
+    method_epsilon_graph(res, dataset = "german_credit")
     
    
     

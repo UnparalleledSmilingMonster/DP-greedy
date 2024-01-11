@@ -15,7 +15,7 @@ delta_letter='\u03B4'
 lambda_letter = '\u03BB'
 
 
-confidence = 0.98
+confidence = 0.99
 max_card = 2
 
 def pformat(var, mode ="f", num=3 ):
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         greedy_rl.fit(X_unbias_train, y_train, features=features_unbias, prediction_name=prediction)  
         args.delta =greedy_rl.delta
         end=time.time() - start           
-                                         
+             
     else : raise Exception("The mechanism desired is not implemented.")
 
     print([args.dataset, args.max_length, args.mechanism, rformat(args.epsilon), pformat(args.delta, "e", 2), rformat(args.min_support), N, end, np.average(greedy_rl.predict(X_unbias_train) == y_train), np.average(greedy_rl.predict(X_unbias_test) == y_test)] )

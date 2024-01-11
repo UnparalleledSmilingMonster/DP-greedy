@@ -87,6 +87,7 @@ def predict_wrap(np.ndarray[np.uint8_t, ndim=2] X, rules):
 
     # This compiles to C, so it's pretty fast!
     for s in range(nsamples):
+        next_rule = 1
         for r in range(n_rules):
             next_rule = 0
             nidx = antecedent_lengths[r]
