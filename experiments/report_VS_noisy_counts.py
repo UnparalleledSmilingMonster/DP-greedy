@@ -7,7 +7,7 @@ import DP as dp
 import numpy as np
 import matplotlib.pyplot as plt
 
-dataset="compas"
+dataset="adult"
 max_card = 2
 
 
@@ -16,7 +16,7 @@ X_unbias,features_unbias = dp.clean_dataset(X,features, dp.get_biases(dataset))
 N = len(X_unbias)            
 
 epsilons = np.logspace(-1,4,100)
-N_seeds = 200
+N_seeds = 100
 seeds = np.arange(1,N_seeds+1,1)
 res = np.zeros((2,len(epsilons), N_seeds))
 

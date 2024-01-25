@@ -111,17 +111,14 @@ def GreedyRLParser(directory="results", summary = "summary.nfo"):
    
                     
         for key in res :
-            if res[key][2] != "vanilla":
-                res[key][8] = float(pformat(res[key][8]/res[key][7], num=2))  
-                res[key][9] = float(pformat(res[key][9]/res[key][7]))
-                res[key][10] = float(pformat(res[key][10]/res[key][7]))  
-                
-                #Computing variances:
-                res[key][11] = float(pformat(np.var(res[key][11]), num =5))
-                res[key][12] =  float(pformat(np.var(res[key][12]), num =5))
-            else : 
-                res[key][11] = 'x'
-                res[key][12] = 'x'
+            res[key][8] = float(pformat(res[key][8]/res[key][7], num=2))  
+            res[key][9] = float(pformat(res[key][9]/res[key][7]))
+            res[key][10] = float(pformat(res[key][10]/res[key][7]))  
+            
+            #Computing variances:
+            res[key][11] = float(pformat(np.var(res[key][11]), num =7))
+            res[key][12] =  float(pformat(np.var(res[key][12]), num =7))
+
                     
         with open(summary, "w") as summ:
              summ.write(json.dumps(res)) 

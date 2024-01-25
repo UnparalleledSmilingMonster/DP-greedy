@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
+
 import seaborn
 import json
 seaborn.set_theme()
@@ -39,11 +41,12 @@ def method_epsilon_graph(res, dataset = "compas", max_length = 5):
         plt.plot(epsilons, accuracies[i], label = methods[i])
         plt.fill_between(epsilons, accuracies[i] - var[i], accuracies[i] + var[i])
     plt.axhline(y = best,linestyle = ':', linewidth=3, label = "Vanilla baseline")
-    plt.xlabel(epsilon_letter)
-    plt.ylabel("Accuracy")
+    plt.xlabel(epsilon_letter, fontsize = 23)
+    plt.ylabel("Accuracy", fontsize = 23)
     plt.title("Method comparison for dataset {0}".format(dataset))
-    plt.legend()          
     plt.xscale("log")
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.08),
+          fancybox=True, shadow=True, ncol=6,fontsize=13)
     plt.show()    
         
             

@@ -79,7 +79,7 @@ if __name__ == '__main__':
         end=time.time() - start           
              
     else : raise Exception("The mechanism desired is not implemented.")
-
+    print(greedy_rl)
     print([args.dataset, args.max_length, args.mechanism, rformat(args.epsilon), pformat(args.delta, "e", 2), rformat(args.min_support), N, end, np.average(greedy_rl.predict(X_unbias_train) == y_train), np.average(greedy_rl.predict(X_unbias_test) == y_test)] )
 
 

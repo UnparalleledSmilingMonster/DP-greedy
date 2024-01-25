@@ -5,10 +5,10 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-dataset = "compas"
+dataset = "adult"
 min_support = 0.05
 max_length = 7
-max_card = 1
+max_card = 2
 epsilon = 0.1
 runs = 100
 verbosity = [] # ["mine"] # ["mine"]

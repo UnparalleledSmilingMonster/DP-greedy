@@ -185,7 +185,7 @@ class DpNoiseGreedyRLClassifier(CorelsClassifier):
         if rule_capt_indices is None :
             capt_labels_counts = np.unique(y_remain, return_counts=True)
             
-        capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
+        else : capt_labels_counts = np.unique(y_remain[rule_capt_indices], return_counts=True)
         
         if capt_labels_counts[0].size == 2:                                    
             capt_labels_0 = capt_labels_counts[1][0]
