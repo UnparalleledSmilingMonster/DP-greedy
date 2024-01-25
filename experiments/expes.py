@@ -37,7 +37,7 @@ confidences = [0.99]
 max_lengths=[5]
 max_cards = [2]
 min_supports = [0.05]
-epsilons = np.logspace(-2, 2, num = 10)
+epsilons = np.logspace(-2, 2, num = 200)
 deltas = [None]
 confidences = [0.99]
 
@@ -57,7 +57,7 @@ max_cards_german = [1]
 min_supports_german = [0.12]
 
 
-seed_nb = 1
+seed_nb = 100
 seeds = [i for i in range(seed_nb)]
 
 

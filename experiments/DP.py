@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import integrate, optimize
 import time
+np.seterr(all="ignore")
+
 
 beta_1 = 3-2*np.sqrt(2)
 beta_2 = 3+2*np.sqrt(2)
@@ -106,11 +108,15 @@ def exponential(epsilon, sensitivity, utility, disp = False):
     if not isinstance(utility, np.ndarray) : utility = np.array(utility)
     utility = np.float128(utility)  #to prevent overflows
     probs = np.exp(epsilon* utility/(2*sensitivity) )
-    probs/= np.sum(probs)
+    probs /= probs.sum()  
+    probs = np.asarray(probs).astype('float64')
+    probs = np.nan_to_num(probs)  
+    probs /= probs.sum()  
+    probs = np.nan_to_num(probs)  
+    probs[-1] = 1 - np.sum(probs[0:-1])
+    if disp : print(probs)   
     
-    if disp : print(probs)
-    
-    return rng.choice(np.arange(0,n), size=1, p=np.float64(probs))
+    return rng.choice(np.arange(0,n), size=1, p= probs)
  	
 
 def Q_roots(beta):
