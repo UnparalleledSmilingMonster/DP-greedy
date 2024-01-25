@@ -110,7 +110,7 @@ def exponential(epsilon, sensitivity, utility, disp = False):
     
     if disp : print(probs)
     
-    return rng.choice(np.arange(0,n), size=1, p=None)
+    return rng.choice(np.arange(0,n), size=1, p=np.float64(probs))
  	
 
 def Q_roots(beta):

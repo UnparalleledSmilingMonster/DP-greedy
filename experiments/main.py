@@ -54,11 +54,12 @@ if __name__ == '__main__':
         start= time.time()
         greedy_rl = GreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=args.max_card, allow_negations=True, seed = args.seed )
         greedy_rl.fit(X_unbias_train, y_train, features=features_unbias, prediction_name=prediction) 
-        end=time.time() - start       or var =="None"    
+        end=time.time() - start        
         
-    elif args.mechanism == "Exponential":
+    elif args.mechanism.endswith("Exponential"):
         start= time.time()
-        greedy_rl =  DPGreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=args.max_card, allow_negations=True, epsilon = args.epsilon, delta = 0.0, seed = args.seed)
+        sens = args.mechanism.split("-")[0]
+        greedy_rl =  DPGreedyRLClassifier(min_support=0.0, max_length=args.max_length, max_card=args.max_card, allow_negations=True, epsilon = args.epsilon, delta = 0.0, sensitivity = sens, seed = args.seed)
         greedy_rl.fit(X_unbias_train, y_train, features=features_unbias, prediction_name=prediction)       
         end=time.time() - start                        
         
@@ -79,7 +80,7 @@ if __name__ == '__main__':
         end=time.time() - start           
              
     else : raise Exception("The mechanism desired is not implemented.")
-    print(greedy_rl)
+    #print(greedy_rl)
     print([args.dataset, args.max_length, args.mechanism, rformat(args.epsilon), pformat(args.delta, "e", 2), rformat(args.min_support), N, end, np.average(greedy_rl.predict(X_unbias_train) == y_train), np.average(greedy_rl.predict(X_unbias_test) == y_test)] )
 
 

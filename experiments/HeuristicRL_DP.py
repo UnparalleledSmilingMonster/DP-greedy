@@ -9,13 +9,14 @@ Subclass of the CORELSClassifier class, training a rule list using a greedy meth
 """
 class DPGreedyRLClassifier(CorelsClassifier):
 
-    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, verbosity=[], seed = 42):
+    def __init__(self, max_card=2, min_support=0.01, max_length=1000000, allow_negations=True, epsilon=1, delta = None, sensitivity = "global", verbosity=[], seed = 42):
         self.max_card = max_card
         self.min_support = min_support
         self.max_length = max_length
         self.allow_negations = allow_negations
         self.verbosity = verbosity
         self.status = 3
+        self.sens = sensitivity
         
         dp.set_seed(seed)
         
@@ -68,12 +69,19 @@ class DPGreedyRLClassifier(CorelsClassifier):
             best_rule_capt_indices = -1
             
             
+            
             current_rules = list_of_rules.copy()
-            info_rule = np.zeros((len(current_rules),1))
-            capt_indices_rules = [[] for i in range(len(current_rules))]
-            utility = np.zeros(len(current_rules))
-            idx = 0
-            sensitivity = 0.5 #dp.smooth_sensitivity_gini(len(X_remain),self.budget_per_node, min_supp = 1) 
+            info_rule = np.zeros((len(current_rules)+1,1))
+            capt_indices_rules = [[] for i in range(len(current_rules)+1)]
+            utility = np.zeros(len(current_rules)+1)
+            
+            info_rule[0]= [-1] #keep track of captured indexes and rule 
+            capt_indices_rules[0] = []
+            utility[0] = init_gini            
+                
+            idx = 1
+            
+            sensitivity = 0.5  if self.sens == "global" else 2*dp.local_sensitivity_gini(len(X_remain))
             for i in range(len(current_rules)): # uses a copy of the full version as is before iterating as the list is then modified during iterations
                 # Check memory limit
                 a_rule = current_rules[i]
@@ -108,28 +116,19 @@ class DPGreedyRLClassifier(CorelsClassifier):
                     capt_gini = (n_samples_rule/n_samples_remain) * (1 - (average_outcome_rule)**2 - (1 - average_outcome_rule)**2)
                 rule_gini = capt_gini + other_gini                
                
-                #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now
-                if rule_gini > init_gini: #if the rule does not better the model drop it
-                    list_of_rules.remove(a_rule)
+                #is_different_from_default =  (pred == 0 and average_outcome_other >= 0.5) or (pred == 1 and average_outcome_other < 0.5) # not used for now             
                     
-                else :
-                    info_rule[idx]= [i] #keep track of captured indexes and rule 
-                    capt_indices_rules[idx] = rule_capt_indices
-                    utility[idx] = rule_gini
-                    idx +=1  #only increment if rule is kept for the 'Rashomon'-like set
+                info_rule[idx]= [i] #keep track of captured indexes and rule 
+                capt_indices_rules[idx] = rule_capt_indices
+                utility[idx] = rule_gini
+                idx +=1  #only increment if rule is kept for the 'Rashomon'-like set
 
-                
-
-                
-            info_rule = info_rule[:idx]
-            utility = utility[:idx] #truncate to last element idx
+                   
             
-            if idx  == 0:  #means that utility is empty
-                stop = True 
-                
-            else:
-               #print("Number of rules to sample from : ", len(utility))
-                best_idx = dp.exponential(self.budget_per_node, sensitivity, 1-utility)[0]
+           #print("Number of rules to sample from : ", len(utility))
+            best_idx = dp.exponential(self.budget_per_node, sensitivity, 1-utility)[0]
+            
+            if int(info_rule[best_idx][0]) != -1 : #if not default rule sampled then 
                 best_rule = current_rules[int(info_rule[best_idx][0])]
                 best_rule_capt_indices = capt_indices_rules[best_idx][0]            
             
@@ -141,6 +140,11 @@ class DPGreedyRLClassifier(CorelsClassifier):
                 X_remain = np.delete(X_remain, best_rule_capt_indices, axis=0)
                 y_remain = np.delete(y_remain, best_rule_capt_indices)
                 list_of_rules.remove(best_rule)
+                
+                if len(y_remain) == 0 : stop=True
+           
+            else : 
+                stop = True
               
                 
             

@@ -5,7 +5,7 @@ import numpy as np
 
 counter = 0
 
-def command_exec(array_params:list, params:list, dataset:str, directory = "./pfcalcul/results/"):
+def command_exec(array_params:list, params:list, dataset:str, directory = "./pfcalcul/visu/"):
     global counter
     for (idx,values) in enumerate(itertools.product(*array_params)):
             cmd = "python3 main.py"
@@ -15,7 +15,7 @@ def command_exec(array_params:list, params:list, dataset:str, directory = "./pfc
                 cmd += " --" + params[i] + " " + str(values[i])
             
             cmd += " --dataset " + dataset
-            filename = directory +"expe_local0_"+str(counter)+".out"
+            filename = directory +"expe_local00_"+str(counter)+".out"
             #TODO: execute cmd and redirect output to file
             os.system(cmd + " > " + filename) 
             counter +=1
@@ -37,7 +37,7 @@ confidences = [0.99]
 max_lengths=[5]
 max_cards = [2]
 min_supports = [0.05]
-epsilons = np.logspace(-2, 2, num = 200)
+epsilons = np.logspace(-2, 2, num = 10)
 deltas = [None]
 confidences = [0.99]
 
@@ -57,7 +57,7 @@ max_cards_german = [1]
 min_supports_german = [0.12]
 
 
-seed_nb = 100
+seed_nb = 1
 seeds = [i for i in range(seed_nb)]
 
 
@@ -65,7 +65,7 @@ mechanisms_smooth = ["smooth-Cauchy", "smooth-Laplace"]
 params_smooth = ["max_length", "max_card", "min_support", "epsilon", "delta", "confidence", "mechanism", "seed"]
 val_smooth = [max_lengths, max_cards, min_supports, epsilons, deltas, confidences, mechanisms_smooth, seeds]
 
-mechanisms_global = ["global-Laplace", "global-Gaussian", "Exponential"]
+mechanisms_global = ["global-Exponential", "local-Exponential"] #["global-Laplace", "global-Gaussian", "global-Exponential", "local-Exponential"]
 params_dp = ["max_length", "max_card", "epsilon", "delta", "mechanism", "seed"]
 val_dp =[max_lengths, max_cards, epsilons, deltas, mechanisms_global, seeds]
 
@@ -84,13 +84,13 @@ if __name__ == '__main__' :
     datasets = ["compas", "adult", "german_credit"]
         
     for dataset in ["compas", "adult"] :    
-        command_exec(val_vanilla, params_vanilla, dataset)
-        #command_exec(val_dp, params_dp, dataset)
+        #command_exec(val_vanilla, params_vanilla, dataset)
+        command_exec(val_dp, params_dp, dataset)
         #command_exec(val_smooth, params_smooth, dataset)    
        
     dataset = "german_credit"
-    command_exec(val_vanilla_german, params_vanilla, dataset)
-    #command_exec(val_dp_german, params_dp, dataset)
+    #command_exec(val_vanilla_german, params_vanilla, dataset)
+    command_exec(val_dp_german, params_dp, dataset)
     #command_exec(val_smooth_german, params_smooth, dataset)    
      
 

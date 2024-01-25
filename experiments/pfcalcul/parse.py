@@ -102,6 +102,7 @@ def GreedyRLParser(directory="results", summary = "summary.nfo"):
                     res[key] = data[0:7]
                     if res[key][2].startswith("smooth"): res[key][2] = res[key][2].replace("smooth", "sm")
                     elif res[key][2].startswith("global"):res[key][2] = res[key][2].replace("global", "gl")
+                    elif res[key][2].startswith("local"):res[key][2] = res[key][2].replace("local", "loc")
                     res[key].append(1)
                     res[key].append(float(data[-3]))  #time 
                     res[key].append(float(data[-2]))  #train acc 
