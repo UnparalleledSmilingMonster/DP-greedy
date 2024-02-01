@@ -1,4 +1,4 @@
-This repository is a fork from Julien Ferry's repo for probabilistic datasets reconstruction from interpretable models. We reuse his Greedy Rule Lists model and propose several Differentially Private versions of this model. We use a rarely used framework for Differential Privacy : Smoothed sensitivity.
+This repository is a fork from  repo for probabilistic datasets reconstruction from interpretable models. We reuse his Greedy Rule Lists model and propose several Differentially Private versions of this model. We use a rarely used framework for Differential Privacy : Smoothed sensitivity. mettre lien repo et enlever mention repo
 
 Folder `pycorels` contains a modified version of the `CORELS` algorithm and its Python wrapper (original code available on [GitHub](https://github.com/corels/pycorels)).
 Details of the changes are listed within the directory's README.
@@ -6,7 +6,7 @@ Details of the changes are listed within the directory's README.
 Folder `experiments` contains all the DP models and a benchmark file.
 
 Pre-existing Files
-* `HeuristicRL.py` contains the implementation of a Greedy Rule List Classifier by Julien Ferry (`GreedyRLClassifier` object, extending the classifier class proposed in CORELS for the sake of compatibility and efficiency)
+* `HeuristicRL.py` contains the implementation of a Greedy Rule List Classifier (`GreedyRLClassifier` object, extending the classifier class proposed in CORELS for the sake of compatibility and efficiency)
 * `utils_greedy.py` contains useful methods that are called by the Greedy Rule List classifier contained in `HeuristicRL.py`
 
 DP models

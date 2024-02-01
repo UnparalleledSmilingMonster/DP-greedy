@@ -1,5 +1,5 @@
 """
-This file is from the HybridCorels repository of Julien Ferry : 
+This file is from the HybridCorels repository: 
 https://github.com/ferryjul/HybridCORELS/blob/master/paper/rule_mining.py 
 and https://github.com/ferryjul/HybridCORELS/blob/master/paper/exp_utils.py 
 

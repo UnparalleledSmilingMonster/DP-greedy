@@ -7,8 +7,8 @@ import DP as dp
 import numpy as np
 import matplotlib.pyplot as plt
 
-dataset="adult"
-max_card = 2
+dataset="german_credit"
+max_card = 1
 
 
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)

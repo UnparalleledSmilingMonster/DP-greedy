@@ -40,14 +40,16 @@ def wrap_predict(model, X):
     return res
 
 
-
+low_bound = 5e-3
 def MIA_rule_list(model, attack_train_ratio = 0.7, runs = 100):
     
     fprs = []
     tprs = []
-    base_fpr = np.linspace(0, 1, 101)
+    base_fpr = np.linspace(low_bound, 1, 101)
 
     plt.figure(figsize=(8,8))
+    plt.plot([low_bound, 1], [low_bound, 1], color="darkorange", linewidth =2, linestyle="--", label='Random Inference')
+    
     for seed in range(runs):
         x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.50, seed = seed)
         # train attack model
@@ -106,7 +108,7 @@ def MIA_rule_list(model, attack_train_ratio = 0.7, runs = 100):
         plt.plot(fpr, tpr, color="blue", alpha = 0.2, linewidth =0.5)
         
         tpr = np.interp(base_fpr, fpr, tpr)
-        tpr[0] = 0.0
+        tpr[0] = low_bound
         tprs.append(tpr)
 
     tprs = np.array(tprs)
@@ -119,14 +121,14 @@ def MIA_rule_list(model, attack_train_ratio = 0.7, runs = 100):
     plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.3)
 
         
-    plt.plot([0, 1], [0, 1], color="darkorange", linewidth =2, linestyle="--", label='Random Inference')
-    #plt.xlim([0.0, 1.0])
-    #plt.ylim([0.0, 1.0])
-    plt.xticks(np.linspace(0,1,11),fontsize = 13)
+    plt.xlim([low_bound, 1.0])
+    plt.ylim([low_bound, 1.0])
+    plt.xticks(fontsize = 13)
     plt.yticks(fontsize = 13)
     plt.xlabel("False Positive Rate", fontsize = 18)
-    #plt.xscale("symlog")
     plt.ylabel("True Positive Rate", fontsize = 18)
+    plt.xscale("log")
+    plt.yscale("log")
     #plt.title("Receiver Operating Characteristic")
     plt.legend(loc="lower right",  fontsize = 15)
     plt.show()
