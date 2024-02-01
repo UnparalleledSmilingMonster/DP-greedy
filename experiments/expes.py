@@ -65,7 +65,7 @@ mechanisms_smooth = ["smooth-Cauchy", "smooth-Laplace"]
 params_smooth = ["max_length", "max_card", "min_support", "epsilon", "delta", "confidence", "mechanism", "seed"]
 val_smooth = [max_lengths, max_cards, min_supports, epsilons, deltas, confidences, mechanisms_smooth, seeds]
 
-mechanisms_global = ["global-Exponential", "local-Exponential"] #["global-Laplace", "global-Gaussian", "global-Exponential", "local-Exponential"]
+mechanisms_global = ["global-Exponential"] #["global-Laplace", "global-Gaussian", "global-Exponential", "local-Exponential"]
 params_dp = ["max_length", "max_card", "epsilon", "delta", "mechanism", "seed"]
 val_dp =[max_lengths, max_cards, epsilons, deltas, mechanisms_global, seeds]
 

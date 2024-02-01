@@ -40,7 +40,7 @@ def method_epsilon_graph(res, dataset = "compas", max_length = 5):
     for i in range(len(methods)):    
         plt.plot(epsilons, accuracies[i], label = methods[i])
         plt.fill_between(epsilons, accuracies[i] - var[i], accuracies[i] + var[i])
-    plt.axhline(y = best,linestyle = ':', linewidth=3, label = "Vanilla baseline")
+    plt.axhline(y = best,linestyle = ':', linewidth=3, label = "GreedyRL")
     plt.xlabel(epsilon_letter, fontsize = 23)
     plt.ylabel("Accuracy", fontsize = 23)
     plt.title("Method comparison for dataset {0}".format(dataset))
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     with open("summary_visu.nfo", 'r') as summary :
         res = json.load(summary)
         summary.close()
-    method_epsilon_graph(res, dataset = "german_credit")
+    method_epsilon_graph(res, dataset = "compas")
     
    
     
