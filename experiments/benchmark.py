@@ -30,10 +30,6 @@ llambda = 0.20
 max_length = 5
 confidence = 0.98
 
-#TODO: Test on more datasets
-#TODO: change style of the table
-#TODO: Finaaaaally : run for a LOT of runs (try the computation platform)
-#TODO: Enjoy the result. And put it on latex :D
 
 def benchmark(runs = 10, methods = ["smooth-Laplace", "smooth-Cauchy", "Laplace", "Gaussian", "Exponential"], datasets = ["compas", "adult"]):
   

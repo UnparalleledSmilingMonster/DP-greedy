@@ -1,4 +1,4 @@
-This repository is a fork from  repo for probabilistic datasets reconstruction from interpretable models. We reuse his Greedy Rule Lists model and propose several Differentially Private versions of this model. We use a rarely used framework for Differential Privacy : Smoothed sensitivity. mettre lien repo et enlever mention repo
+This repository is a fork from [repository](https://github.com/ferryjul/ProbabilisticDatasetsReconstruction) for the [paper](https://arxiv.org/pdf/2308.15099.pdf). We reuse his Greedy Rule Lists model and propose several Differentially Private versions of this model. We work with a rarely used framework for Differential Privacy : Smooth sensitivity.
 
 Folder `pycorels` contains a modified version of the `CORELS` algorithm and its Python wrapper (original code available on [GitHub](https://github.com/corels/pycorels)).
 Details of the changes are listed within the directory's README.

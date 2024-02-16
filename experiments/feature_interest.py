@@ -3,6 +3,7 @@ from HeuristicRL import GreedyRLClassifier
 from HeuristicRL_DP import DPGreedyRLClassifier
 from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 from sklearn.inspection import permutation_importance
+from DP_global_old import DpNoiseGreedyRLClassifier
 import numpy as np
 import DP as dp
 import pandas as pd
@@ -18,17 +19,16 @@ def get_feature(features, i):
         
         
 
-dataset = "compas"
+dataset = "adult"
 min_support = 0.05
-max_length = 7
+max_length = 5
 max_card = 2
-epsilon = 0.01
+epsilon = 10
 verbosity = [] # ["mine"] # ["mine"]
 X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
-seed = 35
-X_unbias,features_unbias = dp.clean_dataset(X,features, dp.get_biases(dataset))
-N = len(X_unbias)            
-x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.70, seed =seed)
+Nseed = 100
+
+seeds =[i for i in range(Nseed)]
 
 
 def features_corr(dataset, top = 10):
@@ -41,6 +41,7 @@ def features_corr(dataset, top = 10):
 #features_of_interest = features_corr(dataset)
 #print("Features of interest:\n", features_of_interest)
 
+#Deprecated:
 def ratio_interest(model, features):
     dic ={}
     normalize = 0
@@ -56,25 +57,51 @@ def ratio_interest(model, features):
                 dic[feature] += 1
     return sum(dic.values())/(len(rules)-1)
     
+    
+    
 
-def sort_features(arr, features_unbias, top = 10):
+def sort_features(arr, feat, top = 10):
     res = []
     top_k_idx = np.argsort(arr)[-top:]    
     for val in top_k_idx:
-        res.append((features[val], "{0:.4f}".format(arr[val])))
+        res.append((feat[val], "{0:.4f}".format(arr[val])))
     return res
     
 
 
-def top_k_features(model_ref, model, k=5):
+def top_k_features(model_ref, model, k= 5):
     ref = permutation_importance(model_ref, X_unbias, y, n_repeats=10, random_state=42)
     result_ref = list(zip(*list(reversed(sort_features(ref.importances_mean, features_unbias)))))[0][:k]
-    print(result_ref)
+    #print(result_ref)
     compare = permutation_importance(model, X_unbias, y, n_repeats=10, random_state=42)
     result_compare = list(zip(*list(reversed(sort_features(compare.importances_mean, features_unbias)))))[0][:k]
-    print(result_compare)
+    #print(result_compare)
     
-    print(len(set(result_ref).intersection(set(result_compare)))/k)
+    return len(set(result_ref).intersection(set(result_compare)))/k
+
+
+
+res = np.zeros(Nseed)
+
+for seed in seeds :
+
+
+    X_unbias,features_unbias = dp.clean_dataset(X,features, dp.get_biases(dataset))
+    N = len(X_unbias)            
+    x_train, y_train, x_test, y_test= dp.split_dataset(X_unbias, y, 0.70, seed =seed)
+
+    #print(features_unbias)
+    #DP_smooth_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.98)
+    #DP_smooth_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
+    DP_rl = DpNoiseGreedyRLClassifier(min_support=0.0, max_length=max_length, max_card=max_card, allow_negations=True, epsilon = epsilon, delta =None, noise = "Laplace", seed = seed) 
+    DP_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
+    
+    greedy_rl = GreedyRLClassifier(min_support=0.05, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
+    greedy_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
+    res[seed] = top_k_features(greedy_rl, DP_rl)
+
+
+print("AVG : {0} | Variance : {1}".format(np.average(res), np.var(res)))#Deprecated:
 
     
 """
@@ -88,9 +115,8 @@ for elt in reversed(sort_features(result.importances_mean, features_unbias)):
     print(elt[0] + " : " + elt[1])
 """
 
-print("\n")
-DP_smooth_rl = DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.98)
-DP_smooth_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
+#print("\n")
+
 #print(DP_smooth_rl)
 """
 print("DP Smooth rl:")
@@ -99,9 +125,8 @@ result = permutation_importance(DP_smooth_rl, X_unbias, y, n_repeats=10, random_
 for elt in reversed(sort_features(result.importances_mean, features_unbias)):
     print(elt[0] + " : " + elt[1])
 """
-print("\n")
-greedy_rl = GreedyRLClassifier(min_support=0.05, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True)
-greedy_rl.fit(x_train, y_train, features=features_unbias, prediction_name=prediction)
+#print("\n")
+
 #print(greedy_rl)
 """
 print("Greedy rl:")
@@ -111,5 +136,6 @@ for elt in reversed(sort_features(result.importances_mean, features_unbias)):
     print(elt[0] + " : " + elt[1])
 """
     
-top_k_features(greedy_rl, DP_smooth_rl)
+#DP-Smooth VS 
+
 

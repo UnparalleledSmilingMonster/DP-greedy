@@ -65,16 +65,3 @@ print("Search status = ", my_rl.get_status())
 """
 
 
-
-#for i in range(len(rules)):
-#    if i > 0:
-#        print("else ", end = '')
-#    if rules[i] >= 0:
-#        print("if " + features[rules[i]] + " then " + prediction + "=" + str(preds[i]))
-#    else:
-#        print(prediction + "=" + str(preds[i]))
-
-
-
-
-

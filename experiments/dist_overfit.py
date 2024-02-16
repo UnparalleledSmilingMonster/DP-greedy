@@ -5,11 +5,11 @@ from HeuristicRL_DP_smooth import DpSmoothGreedyRLClassifier
 import numpy as np
 import DP as dp
 
-dataset = "adult"
-min_support = 0.05
+dataset = "german_credit"
+min_support = 0.12
 max_length = 7
-max_card = 2
-epsilon = 0.1
+max_card = 1
+epsilon = 10
 runs = 100
 verbosity = [] # ["mine"] # ["mine"]
 
@@ -40,13 +40,14 @@ greedy_rl.distributional_overfit(x_train, x_test, y_train, y_test)
 def compute_overfit(model, max_card, max_length, dataset, runs):
     overfit = np.zeros((2,runs))
     vul = np.zeros(runs)
+    acc = np.zeros(runs)
 
     for seed in range(runs):
         if model == "corels":
             rl_model = CorelsClassifier(n_iter=1000000, map_type="prefix", policy="bfs", verbosity=[], ablation=0, max_card=max_card, min_support=0.00, max_length=10000, c=0.0000001)
         elif model == "greedy":
             rl_model=GreedyRLClassifier(min_support=0.0, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, seed=seed)        
-        else : rl_model= DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.98, seed = seed)
+        else : rl_model= DpSmoothGreedyRLClassifier(min_support=min_support, max_length=max_length, verbosity=verbosity, max_card=max_card, allow_negations=True, epsilon = epsilon, noise = "Laplace", confidence=0.99, seed = seed)
         
         X, y, features, prediction = load_from_csv("data/%s.csv" %dataset)
         X_unbias,features_unbias = dp.clean_dataset(X,features, dataset)
@@ -56,9 +57,11 @@ def compute_overfit(model, max_card, max_length, dataset, runs):
         a,b = rl_model.distributional_overfit(x_train, x_test, y_train, y_test, show=False)
         overfit[:,seed] =a
         vul [seed] = b
+        acc[seed] = np.average(rl_model.predict(x_test) == y_test)
         
         
     print("{0} : dist overfit : {1} +/- {2} | overall vulnerability : {3} +/- {4} on dataset {5}".format(model, np.average(overfit,axis=1), np.var(overfit,axis=1),  np.average(vul), np.var(vul), dataset))
+    print("{0} : accuracy : {1} +/- {2}".format(model, np.average(acc), np.var(acc)))
 
     
 
@@ -72,6 +75,7 @@ def compute_overfit(model, max_card, max_length, dataset, runs):
 
 #compute_overfit("corels", max_card, max_length, dataset, runs)
 compute_overfit("greedy", max_card, max_length, dataset, runs)
+print("\n")
 compute_overfit("smooth-greedy", max_card, max_length, dataset, runs)
 
 
