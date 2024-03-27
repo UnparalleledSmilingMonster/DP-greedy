@@ -40,6 +40,3 @@ Folder `data` contains the datasets used in the experiments (and many others!)
 
 Some other files exist on the repository, they are either not complete / not meant for usage (mostly debugging). 
 
-
-[//]: #Folder `light-dp-greedy` is a minimal version of the repository to be run on the distributed computation unit. --->
-
